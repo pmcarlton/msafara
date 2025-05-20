@@ -6,3 +6,9 @@ Session.vim
 termal.1
 termal.1.gz
 manuscript
+old-releases
+termal*.zip
+termal*.gz
+*macos*
+*windows*
+*.sha256
