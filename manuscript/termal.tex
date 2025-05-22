@@ -113,9 +113,9 @@ Apart from the alignment sequences, which occupy the main pane, \texttt{termal}
 also displays sequence labels and  ordinal numbers, a consensus sequence, and a
 conservation bar plot; it also displays sequence metrics such as similarity to
 the consensus, or (ungapped) length (figure~\ref{fig:screen}). The alignment can
-be scrolled one sequence/column at a time using arrow keys or Vim-like
-\texttt{h}, \texttt{j}, \texttt{k}, and \texttt{l}; similar keystrokes allow
-jumping by screenfuls or to the edges of the alignment.
+be scrolled one sequence/column at a time using arrow keys or familiar Vim-style
+motion keys \texttt{h}, \texttt{j}, \texttt{k}, and \texttt{l}; similar
+keystrokes allow jumping by screenfuls or to the edges of the alignment.
 
 By default, residues of nucleotide alignments are coloured according to
 Jalview's\cite{waterhouse2009jalview} nucleotide colour scheme, while protein
@@ -123,12 +123,12 @@ alignments use that of ClustalX\cite{larkin2007clustal}. An alternative colour
 scheme for protein is Lesk's\cite{lesk2019introduction}, and all alignments can
 be rendered in monochrome. 
 
-Alignments too wide to fit on the screen can be "zoomed out" by showing only the
-first and last column, as well as a sample of equidistant columns in between.
-The same can be done with sequences for alignments that are too tall. This
-allows regions of high conservation to be spotted without scrolling. A variant
-of the zoomed-out mode preserves the alignment's aspect ratio, at the cost of
-some wasted space.
+Alignments that exceed the screen size—horizontally, vertically, or both—can be
+zoomed out to display only the first and last row and column, along with a
+sample of equidistant intermediates in both dimensions; the sample size is
+adjusted to fill the available screen space. This allows regions of high
+conservation to be spotted without scrolling. An alternative zoomed-out mode
+preserves the alignment's aspect ratio, at the cost of some unused space.
 
 The sequences can be reordered according to the currently-displayed sequence
 metric, in increasing or decreasing order. This allows e.g. to group the most
@@ -138,7 +138,7 @@ The width of the label pane can be adjusted to fit label length, and both the
 side and bottom panes can be hidden to maximise the space allocated to the
 alignment.
 
-\texttt{termal} comes with a built-in help screen that lists all key bindings.
+\texttt{termal} includes a built-in help screen that lists all key bindings.
 
 \begin{figure*}[!t]%
 \centering
@@ -161,8 +161,9 @@ alignment.
 \paragraph*{Dependencies and Installation}
 
 \texttt{termal} and \texttt{alen} are written in Rust\cite{klabnik2019rust} and
-compile to a single binary with no dependencies. By contrast, \texttt{alv}
-requires BioPython and \texttt{showalign} is part of the \textsc{EMBOSS} suite.
+compile to a single binary with no dependencies. By contrast,
+\texttt{alv}\cite{Arvestad2018} requires BioPython and \texttt{showalign} is
+part of the \textsc{EMBOSS} suite.
 
 \paragraph*{Features}
 
@@ -175,15 +176,15 @@ offer at least some of these features.
 
 \texttt{termal} has been tested on alignments exceeding 15,000 sequences and
 1,500 columns (\textasciitilde{}22 million alignment cells), with startup and
-initial rendering completing in under one second on a machine with
-12th-generation Intel\textregistered{} Core\textsuperscript{TM} i5-1240P CPU and
-16 GB of RAM running Linux 6.14.2. In practice, interactive performance is
-limited more by the speed of the terminal emulator than by \texttt{termal}
-itself.  GPU-accelerated terminals such as Alacritty\cite{alacritty},
-Kitty\cite{kitty} and Ghostty\cite{ghostty} offer smoother scrolling at large
-screen sizes than do more traditional emulators, and terminals that support
-24-bit colours give better results.  \texttt{termal} is currently restricted to
-Fasta-formatted alignments.
+initial rendering completing in under one second on a machine with a
+12th-generation Intel\textregistered{} Core\textsuperscript{TM} i5-1240P
+processor and 16 GB of RAM running Linux 6.14.2. In practice, interactive
+performance is limited more by the speed of the terminal emulator than by
+\texttt{termal} itself.  GPU-accelerated terminals such as
+Alacritty\cite{alacritty}, Kitty\cite{kitty} and Ghostty\cite{ghostty} offer
+smoother scrolling at large screen sizes than do more traditional emulators, and
+terminals that support 24-bit colours give better results.  \texttt{termal} is
+currently restricted to Fasta-formatted alignments.
 
 
 \section*{Availability}
@@ -191,27 +192,27 @@ Fasta-formatted alignments.
 \texttt{termal} is distributed under the MIT license. It is available as a
 precompiled, statically-linked binary (for Linux, MacOS, and Windows), with no external
 dependencies or runtime environment required, from
-\url{https://github.com/sib-swiss/termal.git}. Alternatively, users with Rust
+\url{https://github.com/sib-swiss/termal.git}.\linebreak
+Alternatively, users with Rust
 installed can install it via \texttt{cargo install termal-msa}. The source code
 has also been deposited on Zenodo (\url{https://zenodo.org/records/15472432}).
 
 \section*{Conclusion}
 
-While this work is not intended as a comprehensive review of alignment viewers,
-we surveyed several tools with comparable goals — namely, terminal-native
-operation and varying degrees of interactivity — including \texttt{showalign},
-\texttt{alan}, \texttt{alv}\cite{Arvestad2018}, and \texttt{alen}.  To our
-knowledge, \texttt{termal} combines a unique set of features in a terminal
-interface.  Its minimal dependencies and fast startup make \texttt{termal}
-suitable for both ad-hoc use and for integration into semi-automated workflows
-requiring terminal-based alignment review. Accordingly, \texttt{termal} fills a
+While this work is not intended as a comprehensive review of terminal-based
+alignment viewers, we surveyed several of them, including \texttt{showalign},
+\texttt{alan}, \texttt{alv}, and \texttt{alen}. To our knowledge,
+\texttt{termal} combines a unique set of features in a terminal interface.  Its
+minimal dependencies and fast startup make \texttt{termal} suitable for both
+\textit{ad-hoc} use and for integration into semi-automated workflows requiring
+alignments to be reviewed in a terminal. Accordingly, \texttt{termal} fills a
 niche for fast, interactive MSA exploration directly in the terminal, making it
 an ideal tool for remote bioinformatics workflows.
 
 \section*{Acknowledgements}
 
 The development of \texttt{termal} was funded by Swiss National Science
-Foundation BRIDGE Discovery grant 40B2-0\_194701.  The author wishes to thank
+Foundation BRIDGE Discovery grant 40B2-0\_194701. The author wishes to thank
 Drs Guillaume Cailleau and Sébastien Moretti for insightful comments on the
 program.
 
