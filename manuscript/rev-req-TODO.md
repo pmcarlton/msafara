@@ -179,8 +179,13 @@ Agreed. This is also on my TODO list for the more distant future.
 > particularly useful for my purposes. At the very least, more informative than:
 > "thread 'main' panicked at src/alignment.rs" would be appreciated.
 
+The limitation to Fasta is stated in the manuscript (end of paragraph
+"Performance and Limitations", p. 2).
+
+* [ ] Mention the limitation early on in the README
 * [ ] See if there is a crate for Stockholm; if so, allow reading stockholm by
   passing an option (later: auto-detect formats, or try several).
+* [ ] Provide a meaningful error message.
 
 > The download links in the markdown README don't seem to work, I think "v1.0.0"
 > should be "v1.1.0" for each.
