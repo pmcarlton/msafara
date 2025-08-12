@@ -12,3 +12,4 @@ termal*.gz
 *macos*
 *windows*
 *.sha256
+.*.sw?
