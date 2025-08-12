@@ -96,7 +96,7 @@
 > incorrect links and cargo package names which should be revised to avoid
 > confusion).
 
-* [ ] Update the preprint with the latest versionof the manuscript, making sure
+* [ ] **NOTE**: do this _last_! Update the preprint with the latest versionof the manuscript, making sure
   these issues are fixed.
 
 > Once an alignment file has been loaded the display is responsive,
