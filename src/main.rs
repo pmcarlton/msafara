@@ -44,8 +44,10 @@ use crate::seq::stockholm::read_stockholm_file;
 #[derive(Copy, Clone, Debug, ValueEnum)]
 enum SeqFileFormat {
     #[clap(name = "fasta")]
+    #[clap(alias = "f")]
     FastA,
     #[clap(name = "stockholm")]
+    #[clap(alias = "s")]
     Stockholm,
 }
 
@@ -74,7 +76,11 @@ struct Cli {
     info: bool,
 
     /// Sequence file format
-    #[arg(short, long = "format", default_value_t = SeqFileFormat::FastA)]
+    #[arg(short, long = "format", default_value_t = SeqFileFormat::FastA,
+        help = "Sequence file format [fasta|stockholm] (or just f|s); default: fasta",
+        hide_default_value = true,
+        hide_possible_values = true,
+    )]
     format: SeqFileFormat,
 
     /// Gecos color map
