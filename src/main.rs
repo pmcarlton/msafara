@@ -10,10 +10,12 @@ mod errors;
 
 use log::{debug, info};
 
-use std::io::stdout;
-//use std::process::exit;
+use std::{
+    io::stdout,
+    fmt,
+};
 
-use clap::{arg, command, Parser};
+use clap::{arg, command, Parser, ValueEnum};
 
 use crossterm::{
     event::{self, KeyEventKind},
@@ -26,6 +28,7 @@ use ratatui::{
     TerminalOptions, Viewport,
 };
 
+use crate::alignment::Alignment;
 use crate::app::App;
 use crate::ui::{
     color_map::colormap_gecos,
@@ -34,6 +37,27 @@ use crate::ui::{
     {ZoomLevel, UI},
 };
 use crate::errors::TermalError;
+
+use crate::seq::fasta::read_fasta_file;
+use crate::seq::stockholm::read_stockholm_file;
+
+#[derive(Copy, Clone, Debug, ValueEnum)]
+enum SeqFileFormat {
+    #[clap(name = "fasta")]
+    FastA,
+    #[clap(name = "stockholm")]
+    Stockholm,
+}
+
+impl fmt::Display for SeqFileFormat {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            SeqFileFormat::FastA => "fasta",
+            SeqFileFormat::Stockholm => "stockholm",
+        };
+        write!(f, "{}", s)
+    }
+}
 
 #[derive(Debug, Parser)]
 #[command(version, about, long_about = None) ]
@@ -48,6 +72,10 @@ struct Cli {
     /// Info mode (no TUI)
     #[arg(short, long)]
     info: bool,
+
+    /// Sequence file format
+    #[arg(short, long = "format", default_value_t = SeqFileFormat::FastA)]
+    format: SeqFileFormat,
 
     /// Gecos color map
     #[arg(short, long = "color-map")]
@@ -113,8 +141,10 @@ fn main() -> Result<(), TermalError> {
     }
 
     // TODO: rename to seq_file, since we are no longer limited to FastA.
-    if let Some(fasta_file) = &cli.aln_fname {
-        let mut app = App::new(fasta_file)?;
+    if let Some(seq_filename) = &cli.aln_fname {
+        let seq_file = read_fasta_file(seq_filename)?;
+        let alignment =  Alignment::new(seq_file);
+        let mut app = App::new(seq_filename, alignment);
 
             if cli.info {
                 info!("Running in debug mode.");

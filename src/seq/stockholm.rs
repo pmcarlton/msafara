@@ -28,7 +28,6 @@ pub fn read_stockholm_file<P: AsRef<Path>>(path: P) -> Result<SeqFile, TermalErr
                         let record = SeqRecord { header: String::from(seqname), sequence: String::from(aln_seq) };
                         result.push(record);
                     }
-                    // TODO: use a specific kind of Error for this, not a std::io::Error.
                     _ => return Err(TermalError::Format(String::from("Expected two fields"))),
                 }
             }

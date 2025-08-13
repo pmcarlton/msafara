@@ -3,10 +3,6 @@
 
 use std::fmt;
 
-
-use crate::seq::fasta::read_fasta_file;
-use crate::seq::stockholm::read_stockholm_file;
-
 use crate::{
     alignment::Alignment,
     app::SeqOrdering::{SourceFile, MetricIncr, MetricDecr},
@@ -62,17 +58,15 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(path: &str) -> Result<App, TermalError> {
-        let fasta_file = read_fasta_file(path)?;
-        let alignment =  Alignment::new(fasta_file);
+    pub fn new(path: &str, alignment: Alignment) -> Self {
         let len = alignment.num_seq();
-        Ok(App {
+        App {
             filename: path.to_string(),
             alignment,
             ordering_criterion: SourceFile,
             metric: PctIdWrtConsensus,
             ordering: (0..len).collect(),
-        })
+        }
     }
 
     // Computed properties (TODO: could be set in a struct member, as they do not change)
