@@ -9,9 +9,8 @@ Termal is a program for examining multiple sequence **al**ignments in a **term**
 
 * No installer (just download and uncompress)
 * No dependencies
-* Best results in a terminal that supports 24-bit ("true color") color output
-  (this includes most modern terminal emulators, but unfortunately **not** MacOS'
-  _Terminal_).
+* Best results in a fast terminal that supports 24-bit ("true color") color
+  (see LIMITATIONS below for details).
 
 Quick Start 
 ============
@@ -227,11 +226,28 @@ terminal, such as:
   the program and alignment to load.
 * Not needing to leave one's work environment - use `termal` on an alignment
   like you would use `less`, `bat`, etc. on any text file.
+* Some CLI alignment viewers insist that FastA headers conform to a specific format
+  before displaying the alignment - `termal` has no such restrictions.
 
-BUGS AND LIMITATIONS
-====================
+BUGS
+====
 
-* Currently, Termal can only read Fasta alignments (i.e., no Phylip or other formats).
+* The list of known bugs is currently (2025-08-14, Termal v. 1.1.0) empty.
+
+LIMITATIONS
+===========
+
+* Currently, Termal can only read Fasta- and Stockholm-formatted alignments
+  (i.e., no Phylip or other formats). The default is FastA; to specify
+  Stockholm, pass `-f stockholm` (or just `-f s`).
+* For best results, use a fast terminal emulator like
+  [Kitty](https://sw.kovidgoyal.net/kitty), [Alacritty](https://alacritty.org),
+  [Ghostty](https://ghostty.org), or [WezTerm](https://wezterm.org).
+* Support for 24-bit color ("full color") is highly recommended. This is
+  featured by most modern terminal emulators, with the notable exception of
+  macOS' _Terminal_. Mac users may wish to try one of the above, or else
+  try [Iterm2](https://iterm2.com).
+
 
 LICENSE
 =======
