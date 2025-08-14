@@ -159,7 +159,7 @@ pub fn col_density(sequences: &Vec<String>, col: usize) -> f64 {
             'a'..='z' | 'A'..='Z' => mass += 1,
             '-' | '.' | ' ' => {}
             other => {
-                panic!("Character {other} unexpected in an alignment.");
+                panic!("Character {other} unexpected in an alignment.\nThis might be due to file format, please see option -f."); 
             }
         }
     }
