@@ -131,7 +131,8 @@ pub fn consensus(sequences: &Vec<String>) -> String {
             if br.residue.is_alphabetic() {
                 consensus.push(br.residue.to_ascii_lowercase());
             } else {
-                consensus.push('-');
+                //consensus.push('-');
+                consensus.push(br.residue);
             }
         } else {
             consensus.push('*');
