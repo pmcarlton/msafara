@@ -1,0 +1,15 @@
+;An "alignment" with sequences of unequal lengths
+>Atheris_001
+tgct-ttcgtcaaAgtac
+>Rana_002
+tgct-ttAgAcaaagtaggcc
+>Populus_003
+tgct-ttcgAcaaagtaggc
+>Balaenoptera_004
+tgctgttcgtcaaagCac
+>Poa_005
+tgctgttcgtcaaagtagc
+>Saccharomyces_006
+tgctgttcgtcaaagtaggcc
+>Amanita_007
+tgctgttcgtcaaagtaggc

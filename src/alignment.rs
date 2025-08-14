@@ -58,10 +58,18 @@ impl Alignment {
     pub fn new(fasta: SeqFile) -> Alignment {
         let mut headers: Vec<String> = Vec::new();
         let mut sequences: Vec<String> = Vec::new();
+        let mut max_len: usize = 0;
         for record in fasta {
             headers.push(record.header);
+            let l = record.sequence.len();
             sequences.push(record.sequence);
+            if l > max_len { max_len = l; }
         }
+        // Pad any sequence shorter than max_len
+        for s in &mut sequences {
+            *s = format!("{:<width$}", s, width = max_len);
+        }
+
         let consensus = consensus(&sequences);
         let entropies = entropies(&sequences);
         let densities = densities(&sequences);
@@ -147,7 +155,7 @@ pub fn col_density(sequences: &Vec<String>, col: usize) -> f64 {
     for seq in sequences {
         match seq.as_bytes()[col] as char {
             'a'..='z' | 'A'..='Z' => mass += 1,
-            '-' | '.' => {}
+            '-' | '.' | ' ' => {}
             other => {
                 panic!("Character {other} unexpected in an alignment.");
             }
@@ -451,5 +459,13 @@ mod tests {
     fn test_seq_type_15() {
         assert_eq!(Nucleic, seq_type("UUTGAU"));
     }
+
+    // Make sure seq files with unequal lengths get correctly padded
+    #[test]
+    fn test_unequal_seq_len() {
+        let fasta = read_fasta_file("./data/test5.aln").unwrap();
+        let aln1 = Alignment::new(fasta);
+    }
+        
 
 }
