@@ -91,20 +91,20 @@ arrows: scroll 1 column/line; shift-arrows : scroll 1 screenful \
 `<`,`>`: widen/narrow label pane \
 `a`  : hide/show label pane \
 `c`  : hide/show consensus pane \
-`f`  : toggle fullscreen alignment pane \
+`f`  : toggle fullscreen alignment pane
 
 ### Video
 
 `s`: next color scheme           \
 `m`: next color map              \
-`i`: toggle inverse/direct video \
+`i`: toggle inverse/direct video 
 
 Try dark/inverse for best results (this is the default).
 
 ### Metrics and Orderings
 
 `o`: next ordering \
-`t`: next metric \
+`t`: next metric
 
 Features
 ========
