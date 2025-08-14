@@ -10,6 +10,8 @@ Termal is a program for examining multiple sequence **al**ignments in a **term**
 * No installer (just download and uncompress)
 * No dependencies
 * Best results in a terminal that supports 24-bit ("true color") color output
+  (this includes most modern terminal emulators, but unfortunately **not** MacOS'
+  _Terminal_).
 
 Quick Start 
 ============
@@ -78,32 +80,32 @@ the console, run `termal -b`. The main bindings are as follows:
 ### Motion
 
 arrows: scroll 1 column/line; shift-arrows : scroll 1 screenful
-        h,j,k,l are aliases for left, down, up, and right arrow
-^,G,g,$: full left, bottom, top, full right
+        `h`,`j`,`k`,`l` are aliases for left, down, up, and right arrow
+`^`,`G`,`g`,`$`: full left, bottom, top, full right
 
 ### Zooming
 
-z,Z: cycle through zoom modes
+`z`,`Z`: cycle through zoom modes
 
 ### Adjusting the Panes
 
-<,>: widen/narrow label pane
-a  : hide/show label pane
-c  : hide/show consensus pane
-f  : toggle fullscreen alignment pane
+`<`,`>`: widen/narrow label pane
+`a`  : hide/show label pane
+`c`  : hide/show consensus pane
+`f`  : toggle fullscreen alignment pane
 
 ### Video
 
-s: next color scheme
-m: next color map
-i: toggle inverse/direct video
+`s`: next color scheme
+`m`: next color map
+`i`: toggle inverse/direct video
 
 Try dark/inverse for best results (this is the default).
 
 ### Metrics and Orderings
 
-o: next ordering
-t: next metric
+`o`: next ordering
+`t`: next metric
 
 Features
 ========
