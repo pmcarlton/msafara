@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Thomas Junier
 
-use std::io;
+use std::{fmt, io};
 
 #[derive(Debug)]
 pub enum TermalError {
@@ -21,5 +21,14 @@ impl From<io::Error> for TermalError {
 impl From<String> for TermalError {
     fn from(s: String) -> Self {
         TermalError::Format(s)
+    }
+}
+
+impl fmt::Display for TermalError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TermalError::Io(e) => write!(f, "I/O error: {}", e),
+            TermalError::Format(msg) => write!(f, "Format error: {}", msg),
+        }
     }
 }
