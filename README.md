@@ -24,7 +24,7 @@ alignment (see below). Press "`?`" for help.
 * [Download](https://github.com/sib-swiss/termal/releases/download/v1.1.0/termal-v1.1.0-linux-x86_64.tar.gz)
 
 ```bash
-tar -xzf termal-v1.1.0-linux-x86_64.tar.gz
+$ tar -xzf termal-v1.1.0-linux-x86_64.tar.gz
 ./termal data/example-1.msa
 ```
 
@@ -38,7 +38,7 @@ tar -xzf termal-v1.1.0-linux-x86_64.tar.gz
 2. Open a terminal and run:
 
 ```powershell
-termal.exe example-1.msa
+C:\Users\User> termal.exe example-1.msa
 ```
 
 ---
@@ -48,7 +48,7 @@ termal.exe example-1.msa
 * [Download](https://github.com/sib-swiss/termal/releases/download/v1.1.0/termal-v1.1.0-macos-x86_64.tar.gz)
 
 ```bash
-tar -xzf termal-v1.1.0-macos-x86_64.tar.gz
+$ tar -xzf termal-v1.1.0-macos-x86_64.tar.gz
 ./termal data/example-1.msa
 ```
 
