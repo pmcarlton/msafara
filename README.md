@@ -62,7 +62,7 @@ Synopsis
 Just pass your alignment as argument to the `termal` binary:
 
 ```bash
-<span style="user-select: none;">$ </span>termal [options] <alignment>
+$ termal [options] <alignment>
 ```
 
 For help, just do
