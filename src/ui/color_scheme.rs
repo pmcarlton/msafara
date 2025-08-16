@@ -8,13 +8,9 @@ use ratatui::prelude::Color;
 use crate::{
     alignment::SeqType,
     ui::{
-        color_map::{
-            ColorMap,
-            builtin_polychrome_colormaps,
-            monochrome_colormap,
-        },
+        color_map::{builtin_polychrome_colormaps, monochrome_colormap, ColorMap},
         color_scheme::SeqType::Protein,
-    }
+    },
 };
 
 // In-house colors
@@ -106,7 +102,7 @@ impl ColorScheme {
         let index = if macromolecule_type == Protein { 1 } else { 0 };
         ColorScheme {
             theme: Theme::Light,
-            label_num_color: Color::from_u32(0x00008000), 
+            label_num_color: Color::from_u32(0x00008000),
             seq_metric_color: Color::Rgb(25, 127, 229),
             residue_colormaps: builtin_polychrome_colormaps(),
             residue_colormap_index: index,

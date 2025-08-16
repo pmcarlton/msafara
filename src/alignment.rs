@@ -63,7 +63,9 @@ impl Alignment {
             headers.push(record.header);
             let l = record.sequence.len();
             sequences.push(record.sequence);
-            if l > max_len { max_len = l; }
+            if l > max_len {
+                max_len = l;
+            }
         }
         // Pad any sequence shorter than max_len, so we are not limited to alignments with exactly
         // identical numbers of positions (reviewer suggestion).
@@ -74,12 +76,11 @@ impl Alignment {
         let consensus = consensus(&sequences);
         let entropies = entropies(&sequences);
         let densities = densities(&sequences);
-        let id_wrt_consensus = sequences.iter()
+        let id_wrt_consensus = sequences
+            .iter()
             .map(|seq| percent_identity(seq, &consensus))
             .collect();
-        let relative_seq_len = sequences.iter()
-            .map(|seq| seq_len_nogaps(seq))
-            .collect();
+        let relative_seq_len = sequences.iter().map(|seq| seq_len_nogaps(seq)).collect();
         let first_seq = sequences.iter().nth(0);
         let macromolecule_type = seq_type(first_seq.expect("No sequence found."));
 
@@ -159,7 +160,7 @@ pub fn col_density(sequences: &Vec<String>, col: usize) -> f64 {
             'a'..='z' | 'A'..='Z' => mass += 1,
             '-' | '.' | ' ' => {}
             other => {
-                panic!("Character {other} unexpected in an alignment.\nThis might be due to file format, please see option -f."); 
+                panic!("Character {other} unexpected in an alignment.\nThis might be due to file format, please see option -f.");
             }
         }
     }
@@ -219,7 +220,9 @@ fn entropy(freqs: &ResidueDistribution) -> f64 {
 }
 
 fn percent_identity(s1: &str, s2: &str) -> f64 {
-    let num_identical = s1.chars().zip(s2.chars())
+    let num_identical = s1
+        .chars()
+        .zip(s2.chars())
         .filter(|(c1, c2)| c1.to_ascii_uppercase() == c2.to_ascii_uppercase())
         .count();
     num_identical as f64 / s1.len() as f64
@@ -233,12 +236,11 @@ fn seq_type(sequence: &str) -> SeqType {
     let counts = sequence.to_lowercase().chars().counts();
     let counts_u64: HashMap<char, u64> = counts.into_iter().map(|(k, v)| (k, v as u64)).collect();
     let frequencies = to_freq_distrib(&counts_u64);
-    let nt_freq: f64 = 
-        *frequencies.get(&'a').unwrap_or(&0.0) + 
-        *frequencies.get(&'c').unwrap_or(&0.0) + 
-        *frequencies.get(&'g').unwrap_or(&0.0) + 
-        *frequencies.get(&'t').unwrap_or(&0.0) + 
-        *frequencies.get(&'u').unwrap_or(&0.0);
+    let nt_freq: f64 = *frequencies.get(&'a').unwrap_or(&0.0)
+        + *frequencies.get(&'c').unwrap_or(&0.0)
+        + *frequencies.get(&'g').unwrap_or(&0.0)
+        + *frequencies.get(&'t').unwrap_or(&0.0)
+        + *frequencies.get(&'u').unwrap_or(&0.0);
     // A quick-and dirty heuristic, I'm afraid
     if nt_freq > 0.75 {
         Nucleic
@@ -250,7 +252,10 @@ fn seq_type(sequence: &str) -> SeqType {
 #[cfg(test)]
 mod tests {
     use crate::alignment::{
-        best_residue, consensus, densities, entropies, entropy, percent_identity, res_count, seq_len_nogaps, seq_type, to_freq_distrib, Alignment, BestResidue, ResidueCounts, ResidueDistribution, SeqType::{Nucleic, Protein},
+        best_residue, consensus, densities, entropies, entropy, percent_identity, res_count,
+        seq_len_nogaps, seq_type, to_freq_distrib, Alignment, BestResidue, ResidueCounts,
+        ResidueDistribution,
+        SeqType::{Nucleic, Protein},
     };
     use crate::seq::fasta::read_fasta_file;
     use approx::assert_relative_eq;
@@ -456,7 +461,6 @@ mod tests {
         assert_eq!(Nucleic, seq_type("cgatgcacgatgcncagtgtuucgatcga"));
     }
 
-
     #[test]
     fn test_seq_type_15() {
         assert_eq!(Nucleic, seq_type("UUTGAU"));
@@ -468,6 +472,4 @@ mod tests {
         let fasta = read_fasta_file("./data/test5.aln").unwrap();
         let aln1 = Alignment::new(fasta);
     }
-        
-
 }

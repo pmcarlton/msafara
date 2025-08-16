@@ -2,12 +2,12 @@
 // Copyright (c) 2025 Thomas Junier
 
 use std::fs::File;
-use std::path::Path;
 use std::io::{BufRead, BufReader};
+use std::path::Path;
 
 use crate::errors::TermalError;
-use crate::seq::record::SeqRecord;
 use crate::seq::file::SeqFile;
+use crate::seq::record::SeqRecord;
 
 pub fn read_stockholm_file<P: AsRef<Path>>(path: P) -> Result<SeqFile, TermalError> {
     let file = File::open(path)?;
@@ -17,15 +17,20 @@ pub fn read_stockholm_file<P: AsRef<Path>>(path: P) -> Result<SeqFile, TermalErr
         let l: String = line.unwrap();
         let first_char = l.chars().next().unwrap();
         match first_char {
-            '/' => { break; } // Assuming '/' is the beginning of '//', which conceivably might not be
-                          // true
+            '/' => {
+                break;
+            } // Assuming '/' is the beginning of '//', which conceivably might not be
+            // true
             '#' => {} // Annotation -> ignore.
             _ => {
                 let mut fields = l.split_whitespace();
 
                 match (fields.next(), fields.next(), fields.next()) {
                     (Some(seqname), Some(aln_seq), None) => {
-                        let record = SeqRecord { header: String::from(seqname), sequence: String::from(aln_seq) };
+                        let record = SeqRecord {
+                            header: String::from(seqname),
+                            sequence: String::from(aln_seq),
+                        };
                         result.push(record);
                     }
                     _ => return Err(TermalError::Format(String::from("Expected two fields"))),
@@ -53,7 +58,10 @@ mod tests {
         let path = "data/PF00571.sto";
         let fasta: SeqFile = read_stockholm_file(path).expect("Test file not found");
         assert_eq!(fasta[0].header, "O83071/192-246");
-        assert_eq!(fasta[0].sequence, "MTCRAQLIAVPRASSLAE..AIACAQKM....RVSRVPVYERS");
+        assert_eq!(
+            fasta[0].sequence,
+            "MTCRAQLIAVPRASSLAE..AIACAQKM....RVSRVPVYERS"
+        );
     }
 
     #[test]
@@ -61,7 +69,10 @@ mod tests {
         let path = "data/PF00571.sto";
         let fasta: SeqFile = read_stockholm_file(path).expect("Test file not found");
         assert_eq!(fasta[4].header, "O31699/88-139");
-        assert_eq!(fasta[4].sequence, "EVMLTDIPRLHINDPIMK..GFGMVINN......GFVCVENDE");
+        assert_eq!(
+            fasta[4].sequence,
+            "EVMLTDIPRLHINDPIMK..GFGMVINN......GFVCVENDE"
+        );
     }
 
     // TODO: more tests

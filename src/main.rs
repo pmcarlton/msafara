@@ -3,17 +3,14 @@
 
 mod alignment;
 mod app;
+mod errors;
+mod seq;
 mod ui;
 mod vec_f64_aux;
-mod seq;
-mod errors;
 
 use log::{debug, info};
 
-use std::{
-    io::stdout,
-    fmt,
-};
+use std::{fmt, io::stdout};
 
 use clap::{arg, command, Parser, ValueEnum};
 
@@ -30,13 +27,13 @@ use ratatui::{
 
 use crate::alignment::Alignment;
 use crate::app::App;
+use crate::errors::TermalError;
 use crate::ui::{
     color_map::colormap_gecos,
     key_handling::handle_key_press,
     render::render_ui,
     {ZoomLevel, UI},
 };
-use crate::errors::TermalError;
 
 use crate::seq::fasta::read_fasta_file;
 use crate::seq::stockholm::read_stockholm_file;
@@ -149,84 +146,84 @@ fn main() -> Result<(), TermalError> {
     // TODO: rename to seq_file, since we are no longer limited to FastA.
     if let Some(seq_filename) = &cli.aln_fname {
         let seq_file = match cli.format {
-            SeqFileFormat::FastA =>  read_fasta_file(seq_filename)?,
-            SeqFileFormat::Stockholm =>  read_stockholm_file(seq_filename)?,
+            SeqFileFormat::FastA => read_fasta_file(seq_filename)?,
+            SeqFileFormat::Stockholm => read_stockholm_file(seq_filename)?,
         };
-        let alignment =  Alignment::new(seq_file);
+        let alignment = Alignment::new(seq_file);
         let mut app = App::new(seq_filename, alignment);
 
-            if cli.info {
-                info!("Running in debug mode.");
-                app.output_info();
-                return Ok(());
-            }
+        if cli.info {
+            info!("Running in debug mode.");
+            app.output_info();
+            return Ok(());
+        }
 
-            stdout().execute(EnterAlternateScreen)?;
-            enable_raw_mode()?;
+        stdout().execute(EnterAlternateScreen)?;
+        enable_raw_mode()?;
 
-            let backend = CrosstermBackend::new(stdout());
-            let viewport: Viewport;
-            // Fix viewport dimensions IFF supplied (mainly for tests)
-            //
-            if let Some(width) = cli.width {
-                // height must be defined too (see 'requires' in struct Cli above)
-                let height = cli.height.unwrap();
-                viewport = Viewport::Fixed(Rect::new(0, 0, width, height));
-            } else {
-                viewport = Viewport::Fullscreen;
-            }
-            let mut terminal = Terminal::with_options(backend, TerminalOptions { viewport })?;
-            terminal.clear()?;
+        let backend = CrosstermBackend::new(stdout());
+        let viewport: Viewport;
+        // Fix viewport dimensions IFF supplied (mainly for tests)
+        //
+        if let Some(width) = cli.width {
+            // height must be defined too (see 'requires' in struct Cli above)
+            let height = cli.height.unwrap();
+            viewport = Viewport::Fixed(Rect::new(0, 0, width, height));
+        } else {
+            viewport = Viewport::Fullscreen;
+        }
+        let mut terminal = Terminal::with_options(backend, TerminalOptions { viewport })?;
+        terminal.clear()?;
 
-            let mut app_ui = UI::new(&mut app);
-            if cli.no_scrollbars {
-                app_ui.disable_scrollbars();
-            }
-            if cli.no_color {
-                app_ui.set_monochrome();
-            }
-            if cli.no_zoombox {
-                app_ui.set_zoombox(false);
-            }
-            if cli.no_zb_guides {
-                app_ui.set_zoombox_guides(false);
-            }
-            if cli.hide_labels_pane {
-                app_ui.set_label_pane_width(0);
-            }
-            if cli.hide_bottom_pane {
-                app_ui.set_bottom_pane_height(0);
-            }
+        let mut app_ui = UI::new(&mut app);
+        if cli.no_scrollbars {
+            app_ui.disable_scrollbars();
+        }
+        if cli.no_color {
+            app_ui.set_monochrome();
+        }
+        if cli.no_zoombox {
+            app_ui.set_zoombox(false);
+        }
+        if cli.no_zb_guides {
+            app_ui.set_zoombox_guides(false);
+        }
+        if cli.hide_labels_pane {
+            app_ui.set_label_pane_width(0);
+        }
+        if cli.hide_bottom_pane {
+            app_ui.set_bottom_pane_height(0);
+        }
 
-            if let Some(path) = cli.color_map {
-                let _cmap = colormap_gecos(path.into());
-                // TODO: add to colormaps (and remove the underscore)
-            }
+        if let Some(path) = cli.color_map {
+            let _cmap = colormap_gecos(path.into());
+            // TODO: add to colormaps (and remove the underscore)
+        }
 
-            // main loop
-            loop {
-                debug!("\n**** Draw Iteration ****");
-                debug!("terminal size: {:?}", terminal.size().unwrap());
-                terminal.draw(|f| render_ui(f, &mut app_ui))?;
-                // handle events
-                if event::poll(std::time::Duration::from_millis(cli.poll_wait_time))? {
-                    if let event::Event::Key(key) = event::read()? {
-                        if key.kind == KeyEventKind::Press {
-                            // handle_key_press() returns true IFF user quits
-                            let done = handle_key_press(&mut app_ui, key);
-                            if done {
-                                break;
-                            }
+        // main loop
+        loop {
+            debug!("\n**** Draw Iteration ****");
+            debug!("terminal size: {:?}", terminal.size().unwrap());
+            terminal.draw(|f| render_ui(f, &mut app_ui))?;
+            // handle events
+            if event::poll(std::time::Duration::from_millis(cli.poll_wait_time))? {
+                if let event::Event::Key(key) = event::read()? {
+                    if key.kind == KeyEventKind::Press {
+                        // handle_key_press() returns true IFF user quits
+                        let done = handle_key_press(&mut app_ui, key);
+                        if done {
+                            break;
                         }
                     }
                 }
             }
-
-            stdout().execute(LeaveAlternateScreen)?;
-            disable_raw_mode()?;
-
-            Ok(())
-        } else {
-            panic!("Expected filename argument");
         }
+
+        stdout().execute(LeaveAlternateScreen)?;
+        disable_raw_mode()?;
+
+        Ok(())
+    } else {
+        panic!("Expected filename argument");
     }
+}

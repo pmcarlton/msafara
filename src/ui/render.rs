@@ -13,7 +13,7 @@ use crate::{
     ui::{
         barchart::{value_to_hbar, values_barchart},
         color_scheme::Theme,
-        AlnWRTSeqPane, BottomPanePosition, VideoMode, 
+        AlnWRTSeqPane, BottomPanePosition, VideoMode,
     },
     vec_f64_aux::{normalize, ones_complement, product},
     ZoomLevel, UI,
@@ -165,13 +165,13 @@ fn get_residue_style(video_mode: VideoMode, theme: Theme, color: Color) -> Style
     }
 
     match video_mode {
-        VideoMode::Inverse  => {
+        VideoMode::Inverse => {
             style = style.add_modifier(Modifier::REVERSED);
             if Theme::Light == theme {
                 style = style.bg(Color::Black);
             }
-        },
-        _ => { },
+        }
+        _ => {}
     }
 
     style
@@ -202,8 +202,7 @@ fn zoom_in_seq_text<'a>(ui: &'a UI) -> Vec<Line<'a>> {
             let cur_seq_ref = &ui.app.alignment.sequences[ordering[i]];
             // TODO: is the conversion to bytes done at _each_ iteration?
             let cur_char = (*cur_seq_ref).as_bytes()[j] as char;
-            let style = get_residue_style(ui.video_mode,
-                ui.theme(), colormap.get(cur_char));
+            let style = get_residue_style(ui.video_mode, ui.theme(), colormap.get(cur_char));
             spans.push(Span::styled(cur_char.to_string(), style));
         }
         text.push(Line::from(spans));
@@ -223,8 +222,7 @@ fn zoom_out_seq_text<'a>(ui: &UI) -> Vec<Line<'a>> {
         let mut spans: Vec<Span> = Vec::new();
         for j in retained_col_ndx(ui) {
             let cur_char: char = seq_chars[j];
-            let style = get_residue_style(ui.video_mode,
-                ui.theme(), colormap.get(cur_char));
+            let style = get_residue_style(ui.video_mode, ui.theme(), colormap.get(cur_char));
             let span = Span::styled(cur_char.to_string(), style);
             spans.push(span);
         }
@@ -244,8 +242,7 @@ fn zoom_out_ar_seq_text<'a>(ui: &UI) -> Vec<Line<'a>> {
         let mut spans: Vec<Span> = Vec::new();
         for j in retained_col_ndx(ui) {
             let cur_char: char = seq_chars[j];
-            let style = get_residue_style(ui.video_mode,
-                ui.theme(), colormap.get(cur_char));
+            let style = get_residue_style(ui.video_mode, ui.theme(), colormap.get(cur_char));
             let span = Span::styled(cur_char.to_string(), style);
             spans.push(span);
         }
@@ -660,7 +657,7 @@ fn compute_title(ui: &UI, aln_para: &[Line]) -> String {
         ui.video_mode,
     );
     format!(
-        "{} | {} " ,
+        "{} | {} ",
         title,
         match ui.zoom_level {
             ZoomLevel::ZoomedIn => "Zoomed in",
@@ -843,8 +840,7 @@ fn render_corner_pane(f: &mut Frame, corner_chunk: Rect, ui: &UI) {
     let metric_block = Block::default().borders(Borders::LEFT);
     let cons_block = Block::default().borders(Borders::LEFT | Borders::BOTTOM);
 
-    let metric_text_style = ui.get_seq_metric_style()
-        .add_modifier(Modifier::BOLD);
+    let metric_text_style = ui.get_seq_metric_style().add_modifier(Modifier::BOLD);
     let metric_para = Paragraph::new(Text::styled(
         format!(
             "{} {}",
@@ -870,7 +866,7 @@ fn mark_consensus_zb_pos(consensus: &mut [Span], ui: &UI) {
     let retained_pos = &retained_col_ndx(ui);
     let highlight = match ui.video_mode {
         VideoMode::Inverse => Style::new().remove_modifier(Modifier::REVERSED),
-        VideoMode::Direct => Style::new().reversed()
+        VideoMode::Direct => Style::new().reversed(),
     };
     for pos in retained_pos {
         let retained_span = consensus[*pos].clone().patch_style(highlight);
@@ -893,7 +889,7 @@ fn render_bottom_pane(f: &mut Frame, bottom_chunk: Rect, ui: &UI) {
         .map(|c| {
             Span::styled(
                 c.to_string(),
-                get_residue_style(ui.video_mode, ui.theme(), colormap.get(c))
+                get_residue_style(ui.video_mode, ui.theme(), colormap.get(c)),
             )
         })
         .collect();
@@ -901,7 +897,6 @@ fn render_bottom_pane(f: &mut Frame, bottom_chunk: Rect, ui: &UI) {
     if ZoomLevel::ZoomedIn != ui.zoom_level && ui.highlight_retained_cols {
         mark_consensus_zb_pos(&mut colored_consensus, ui);
     }
-
 
     let pos_color = match ui.zoom_level {
         ZoomLevel::ZoomedIn => Color::Reset,

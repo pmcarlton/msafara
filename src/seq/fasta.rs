@@ -2,28 +2,34 @@
 // Copyright (c) 2025 Thomas Junier
 
 use std::fs::File;
-use std::path::Path;
 use std::io::{BufRead, BufReader};
+use std::path::Path;
 
-use crate::seq::record::SeqRecord;
 use crate::seq::file::SeqFile;
+use crate::seq::record::SeqRecord;
 
 pub fn read_fasta_file<P: AsRef<Path>>(path: P) -> Result<SeqFile, std::io::Error> {
     let file = File::open(path)?;
     let mut result: SeqFile = Vec::new();
-    let mut current_record = SeqRecord { header: String::new(), sequence: String::new() };
+    let mut current_record = SeqRecord {
+        header: String::new(),
+        sequence: String::new(),
+    };
     let mut first_header = true;
 
     for line in BufReader::new(file).lines() {
         let l: String = line.unwrap();
-        if l.starts_with(">") { 
+        if l.starts_with(">") {
             if first_header {
                 first_header = false;
             } else {
                 // push existing record
                 result.push(current_record);
             }
-            current_record = SeqRecord { header: String::new(), sequence: String::new() };
+            current_record = SeqRecord {
+                header: String::new(),
+                sequence: String::new(),
+            };
             current_record.header.push_str(&l[1..]);
         } else {
             // append line to current record'd sequence
@@ -62,8 +68,10 @@ mod tests {
     fn test_read_fasta_file_3() {
         let path = "data/test3.pep";
         let fasta: SeqFile = read_fasta_file(path).expect("Test file not found");
-        assert_eq!(fasta[0].header, "Some larger FastA record, with several lines");
+        assert_eq!(
+            fasta[0].header,
+            "Some larger FastA record, with several lines"
+        );
         assert_eq!(fasta[0].sequence, "HWYQYDSWSWHQIQDPWVASLMTGSEHNTTIVDLNVLGAMDCLWLCYCQPECFEVFSLCIEVDLPSCCWAKALCAFHMWDSMAKQCWMPEMGEVSYFYALSMFHYFLLHSRPIQPWQTHHIPYDSIVVDLIANYFYNMIVQDVDKNSNIRFDRSVMRDVMIYEFENTYATGVVFNVNGKCGQFCKNMIYVGTIETQKEYEMFKNLDCAVQKRHNLQPNCENIAMKMRIQYNGKRFRMDYWERYRCNDIKQVLPQPFTEVAMEHRTFKLWPTTRLMMSNPKCRQCLEWAAVETGWIFTTNF");
     }
 }
-
