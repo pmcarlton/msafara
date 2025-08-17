@@ -51,12 +51,11 @@ version = "X.Y.Z"
 
 * **Sync crate metadata** (ensure these are accurate):
 
-  * `description`, `repository`, `documentation`, `license`, `readme`, `keywords`, `categories`.
-  * Make sure the crate includes needed files (see §8) via `include = [ ... ]` or `.cargo_vcs_info.json` (default ok if repo is clean).
+* `description`, `repository`, `documentation`, `license`, `readme`, `keywords`, `categories`.
+* Make sure the crate includes needed files (see §8) via `include = [ ... ]` or `.cargo_vcs_info.json` (default ok if repo is clean).
 * **CHANGELOG** (Keep a Changelog style): add a `## [X.Y.Z] - YYYY-MM-DD` section with highlights.
-* **README**: update badges (crates.io, docs.rs, CI), usage, install instructions, and **DOI badge** (concept DOI stays the same; see §10).
+* **README**: make sure badges are still Ok (crates.io, docs.rs, CI), usage, install instructions, and **DOI badge** (concept DOI stays the same; see §10).
 * **CITATION.cff**: bump `version` and `date-released` to `YYYY-MM-DD`; keep Zenodo **concept DOI**.
-* (Optional) **MSRV** note: confirm/tests for minimal supported Rust version.
 
 Verify package content before publishing:
 
