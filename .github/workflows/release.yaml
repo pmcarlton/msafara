@@ -55,7 +55,7 @@ jobs:
           [[ "${{ matrix.archive }}" == "zip" ]] && BIN="${BIN}.exe" || true
           cp "$BIN" "$STAGE/"
           cp README.md LICENSE CHANGELOG.md "$STAGE/" 2>/dev/null || true
-          cp -r data/example-1.msa "$STAGE/data/" 2>/dev/null || true
+          cp -rL data/example-1.msa "$STAGE/data/" 2>/dev/null || true
           NAME="${BIN_NAME}-${VERSION}-${{ matrix.target }}"
           if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
             tar -C "$STAGE" -czf "dist/${NAME}.tar.gz" .
