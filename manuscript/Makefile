@@ -1,6 +1,6 @@
 .PHONY: clean zip
 
-all: cover_letter.pdf termal.pdf
+all: cover_letter.pdf termal.pdf termal-preprint.pdf
 
 cover_letter.pdf: cover_letter.tex
 	xelatex $<
@@ -8,6 +8,12 @@ cover_letter.pdf: cover_letter.tex
 termal.pdf: termal.tex termal.bib 
 	xelatex $<
 	bibtex termal
+	xelatex $<
+	xelatex $<
+
+termal-preprint.pdf: termal-preprint.tex termal.bib 
+	xelatex $<
+	bibtex termal-preprint
 	xelatex $<
 	xelatex $<
 
