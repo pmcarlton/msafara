@@ -28,12 +28,11 @@ latex-src.zip: termal-preprint.tex body.tex abstract.tex termal.bib \
 	rm -rf $(SUBMISSION_DIR)
 	mkdir $(SUBMISSION_DIR)
 	# Symlink required files (adjust as needed)
-	ln -s ../termal-preprint.tex $(SUBMISSION_DIR)/termal-preprint.tex
-	ln -s ../body.tex $(SUBMISSION_DIR)/body.tex
-	ln -s ../abstract.tex $(SUBMISSION_DIR)/abstract.tex
+	ln -s ../termal.tex $(SUBMISSION_DIR)/termal.tex
 	ln -s ../termal.bib $(SUBMISSION_DIR)/termal.bib
+	ln -s ../mynat.bst $(SUBMISSION_DIR)/mynat.bst
 	ln -s ../figure-1.pdf $(SUBMISSION_DIR)/figure-1.pdf
-	ln -s ../README-preprint.md $(SUBMISSION_DIR)/README.md
+	ln -s ../README.md $(SUBMISSION_DIR)/README.md
 	# Create zip archive, following symlinks
 	zip -r $@ $(SUBMISSION_DIR)
 
