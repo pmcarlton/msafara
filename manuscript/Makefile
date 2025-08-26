@@ -22,8 +22,7 @@ termal-preprint.pdf: termal-preprint.tex termal.bib
 
 SUBMISSION_DIR = latex-src
 
-latex-src.zip: termal-preprint.tex body.tex abstract.tex termal.bib \
-	README-preprint.md figure-1.pdf
+latex-src.zip: termal.tex termal.bib mynat.bst README.md figure-1.pdf
 	# Clean and recreate submission dir
 	rm -rf $(SUBMISSION_DIR)
 	mkdir $(SUBMISSION_DIR)
