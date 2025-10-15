@@ -10,7 +10,15 @@ mod vec_f64_aux;
 
 use log::{debug, info};
 
-use std::{fmt, io::stdout};
+use std::{
+    fmt,
+    fs::File,
+    io::{
+        BufRead,
+        BufReader,
+        stdout,
+    }
+};
 
 use clap::{arg, command, Parser, ValueEnum};
 
@@ -138,6 +146,13 @@ struct Cli {
     no_zb_guides: bool,
 }
 
+// pub fn read_fasta_file<P: AsRef<Path>>(path: P) -> Result<SeqFile, std::io::Error> {
+fn read_user_ordering(fname: &str) -> Result<Vec<String>, std::io::Error> {
+    let uord_file = File::open(fname)?;
+    let reader = BufReader::new(uord_file);
+    reader.lines().collect()
+}
+
 fn main() -> Result<(), TermalError> {
     env_logger::init();
     info!("Starting log");
@@ -159,7 +174,10 @@ fn main() -> Result<(), TermalError> {
         };
         let alignment = Alignment::new(seq_file);
         let user_ordering = match cli.user_order {
-            Some(fname) => todo!(),
+            Some(fname) => {
+                let ord_vec = read_user_ordering(&fname)?;
+                Some(ord_vec)
+            }
             None => None,
         };
         let mut app = App::new(seq_filename, alignment,
