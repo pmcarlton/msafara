@@ -180,24 +180,20 @@ pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
             }
 
             KeyCode::Char('s') => ui.next_color_scheme(),
-
             KeyCode::Char('S') => ui.prev_color_scheme(),
 
-            // Switch to next colormap in the list
+            // Switch to next/previous colormap in the list
             KeyCode::Char('m') => ui.next_colormap(),
-
-            // Switch to next colormap in the list
             KeyCode::Char('M') => ui.prev_colormap(),
 
             // Sequence Order
-            KeyCode::Char('o') => ui.cycle_ordering_criterion(),
+            KeyCode::Char('o') => ui.app.next_ordering_criterion(),
+            KeyCode::Char('O') => ui.app.prev_ordering_criterion(),
 
             // Metric
             // TODO: this directl< calls the method in App, while the above call a method in UI
             // (which is just a wrapper around an App counterpart). Make up your mind, dude...
-            KeyCode::Char('t') => {
-                ui.app.cycle_metric();
-            }
+            KeyCode::Char('t') => ui.app.cycle_metric(),
 
             // ----  Exit ----
             KeyCode::Char('q') | KeyCode::Char('Q') => done = true,

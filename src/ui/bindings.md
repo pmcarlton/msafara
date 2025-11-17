@@ -29,5 +29,5 @@ Try dark/inverse for best results (this is the default).
 
 ## Metrics and Orderings
 
-o: next ordering
-t: next metric
+o,O: next/previous ordering
+t,T: next/previous metric

@@ -99,11 +99,20 @@ impl App {
         }
     }
 
-    pub fn cycle_ordering_criterion(&mut self) {
+    pub fn next_ordering_criterion(&mut self) {
         self.ordering_criterion = match self.ordering_criterion {
             SourceFile => MetricIncr,
             MetricIncr => MetricDecr,
             MetricDecr => SourceFile,
+        };
+        self.recompute_ordering();
+    }
+
+    pub fn prev_ordering_criterion(&mut self) {
+        self.ordering_criterion = match self.ordering_criterion {
+            MetricIncr => SourceFile,
+            MetricDecr => MetricIncr,
+            SourceFile => MetricDecr,
         };
         self.recompute_ordering();
     }

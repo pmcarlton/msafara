@@ -514,21 +514,13 @@ impl<'a> UI<'a> {
         }
     }
 
-    // ****************************************************************
-    // Ordering
-
-    pub fn cycle_ordering_criterion(&mut self) {
-        // Just delegate to App
-        self.app.cycle_ordering_criterion();
-    }
 
     // ****************************************************************
+    // Scrolling
 
     pub fn disable_scrollbars(&mut self) {
         self.show_scrollbars = false;
     }
-
-    // Scrolling
 
     pub fn scroll_one_line_up(&mut self) {
         if self.top_line > 0 {
