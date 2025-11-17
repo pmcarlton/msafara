@@ -61,10 +61,17 @@ Normal
 1. [x] B0014 Out-of-bounds error when zoombox is 1-char. To reproduce: `make
    test`. Fixed in `a889c3229228`.
 
-1. [ ] B0013 'M' is supposed to cycle backwards through colormaps, but doesn't.
+1. [x] B0015 'O' is supposed to cycle backwards through orderings, but
+   doesn't. Fixed in `86228064dd`.
 
-1. [ ] B0012 cycling through color maps can only be done in one sense (with
-   `t`): all `T` to cycle in the opposite sense.
+1. [x] B0014 'T' is supposed to cycle backwards through colormaps, but
+   doesn't. Fixed in `9664893618f0`.
+
+1. [x] B0013 'S' is supposed to cycle backwards through color schemes, but
+   doesn't. Fixed in `caffd418b`.
+
+1. [x] B0012 cycling through color maps can only be done in one sense (with
+   `m`): all `M` to cycle in the opposite sense. Fixed in `c5054aa0`.
 
 1. [x] B0011 Accomodate light backgrounds as well as dark ones. Note that
    RataTUI lets Crossterm decide what colors to use _unless specified_. Residues
