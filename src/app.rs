@@ -152,7 +152,8 @@ impl App {
         self.ordering_criterion = match self.ordering_criterion {
             MetricIncr => SourceFile,
             MetricDecr => MetricIncr,
-            SourceFile => MetricDecr,
+            User       => MetricDecr,
+            SourceFile => User,
         };
         self.recompute_ordering();
     }
