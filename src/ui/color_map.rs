@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Thomas Junier
-use std::{
-    collections::HashMap,
-    fmt,
-    fs::File,
-    io::BufReader
-};
+use std::{collections::HashMap, fmt, fs::File, io::BufReader};
 
 use hex_color::HexColor;
 // NOTE: ideally, the color maps should not depend on crates, since one might conceivably switch to
@@ -63,9 +58,7 @@ pub fn builtin_polychrome_colormaps() -> Vec<ColorMap> {
 }
 
 pub fn monochrome_colormap() -> Vec<ColorMap> {
-    vec![
-        color_map_monochrome(),
-    ]
+    vec![color_map_monochrome()]
 }
 
 // NOTE: if it turns out that these hash maps are not efficient (didn't benchmark yet), we might

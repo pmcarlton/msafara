@@ -3,27 +3,31 @@ name: Build and Test
 on:
   push:
     branches: [ master ]
+    tags:
+      - "v*.*.*"        # run CI when you push a release tag (v1.2.0, etc.)
   pull_request:
     branches: [ master ]
 
 jobs:
   test:
-    name: Build and test on ${{ matrix.os }}
+    name: Build & test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
+      # Install latest stable toolchain
+      - uses: dtolnay/rust-toolchain@stable
 
-    - name: Build
-      run: cargo build --release
+      # Speed up builds by caching target/ and registry artifacts
+      - uses: Swatinem/rust-cache@v2
 
-    - name: Run tests
-      run: cargo test --release
+      - name: Build (release)
+        run: cargo build --release --locked
+
+      - name: Test (release)
+        run: cargo test --release --locked

@@ -1,31 +1,22 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Thomas Junier
+mod barchart;
 pub mod color_map;
 mod color_scheme;
-mod barchart;
 pub mod key_handling;
 pub mod render;
 
-use std::{
-    cmp::min,
-    fmt,
-}; 
+use std::{cmp::min, fmt};
 
 use log::debug;
 
 use bitflags::bitflags;
 
 use ratatui::layout::Size;
-use ratatui::style::{
-    Color,
-    Style,
-};
+use ratatui::style::{Color, Style};
 
 use crate::{
-    ui::color_scheme::{
-        ColorScheme,
-        Theme,
-        },
+    ui::color_scheme::{ColorScheme, Theme},
     App,
 };
 
@@ -76,7 +67,7 @@ bitflags! {
 pub struct UI<'a> {
     app: &'a mut App,
     color_schemes: Vec<ColorScheme>,
-    current_color_scheme_index: usize, 
+    current_color_scheme_index: usize,
     zoom_level: ZoomLevel,
     show_zoombox: bool,
     //zoombox_color: Style,
@@ -143,6 +134,7 @@ impl<'a> UI<'a> {
 
     fn max_nb_seq_shown(&self) -> u16 {
         let height = self.aln_pane_size.unwrap().height;
+        /*
         if height >= 2 {
             // border, should later be a constant or a field of UI
             height - 2
@@ -154,15 +146,13 @@ impl<'a> UI<'a> {
             // Then do the same for max_nb_col_shown().
             0
         }
+        */
+        height.saturating_sub(2)
     }
 
     fn max_nb_col_shown(&self) -> u16 {
         let width = self.aln_pane_size.unwrap().width;
-        if width >= 2 {
-            width - 2
-        } else {
-            0
-        }
+        width.saturating_sub(2)
     }
 
     // Resizing (as when the user resizes the terminal window where Termal runs) affects
@@ -226,11 +216,7 @@ impl<'a> UI<'a> {
 
     pub fn reduce_label_pane(&mut self, amount: u16) {
         // TODO: heed the border width (not sure if we'll keep them)
-        self.label_pane_width = if self.label_pane_width > amount {
-            self.label_pane_width - amount
-        } else {
-            0
-        }
+        self.label_pane_width = self.label_pane_width.saturating_sub(amount);
     }
 
     // Bottom pane dimensions
@@ -347,7 +333,11 @@ impl<'a> UI<'a> {
             ZoomLevel::ZoomedOut => ((self.top_line as f64) * self.v_ratio()).floor() as usize,
             ZoomLevel::ZoomedOutAR => {
                 let ratio = self.common_ratio();
-                ((self.top_line as f64) * ratio).floor() as usize
+                let mut zb_top = ((self.top_line as f64) * ratio).floor() as usize;
+                if zb_top >= self.max_nb_seq_shown() as usize {
+                    zb_top = (self.max_nb_seq_shown() as usize) - 1;
+                }
+                zb_top
             }
             _ => panic!(
                 "zoombox_top() should not be called in {:?} mode\n",

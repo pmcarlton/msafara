@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            archive: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: zip
+    runs-on: ${{ matrix.os }}
+
+    env:
+      BIN_NAME: termal
+      VERSION: ${{ github.ref_name }} # e.g. v1.2.0
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+          STAGE="${{ runner.temp }}/stage"
+          mkdir -p "$STAGE/data" "dist"
+          BIN="target/${{ matrix.target }}/release/${BIN_NAME}"
+          [[ "${{ matrix.archive }}" == "zip" ]] && BIN="${BIN}.exe" || true
+          cp "$BIN" "$STAGE/"
+          cp README.md LICENSE CHANGELOG.md "$STAGE/" 2>/dev/null || true
+          cp -rL data/example-1.msa "$STAGE/data/" 2>/dev/null || true
+          NAME="${BIN_NAME}-${VERSION}-${{ matrix.target }}"
+          if [[ "${{ matrix.archive }}" == "tar.gz" ]]; then
+            tar -C "$STAGE" -czf "dist/${NAME}.tar.gz" .
+          else
+            powershell -Command "Compress-Archive -Path '${STAGE}\\*' -DestinationPath 'dist\\${NAME}.zip'"
+          fi
+
+      - name: Checksums (POSIX)
+        if: ${{ matrix.archive == 'tar.gz' }}
+        run: |
+          cd dist
+          if command -v sha256sum > /dev/null; then
+            sha256sum *.tar.gz > SHA256SUMS-${{ matrix.target }}.txt
+          else
+            shasum -a 256 *.tar.gz > SHA256SUMS-${{ matrix.target }}.txt
+          fi
+
+      - name: Checksums (Windows)
+        if: ${{ matrix.archive == 'zip' }}
+        shell: pwsh
+        run: |
+          Set-Location dist
+          Get-ChildItem *.zip | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
+            "$hash  $($_.Name)"
+          } | Out-File -Encoding ascii "SHA256SUMS-${{ matrix.target }}.txt"
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/SHA256SUMS-*.txt

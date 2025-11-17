@@ -58,6 +58,9 @@ Urgent
 Normal
 ------
 
+1. [x] B0014 Out-of-bounds error when zoombox is 1-char. To reproduce: `make
+   test`. Fixed in `a889c3229228`.
+
 1. [ ] B0013 'M' is supposed to cycle backwards through colormaps, but doesn't.
 
 1. [ ] B0012 cycling through color maps can only be done in one sense (with
@@ -70,7 +73,7 @@ Normal
    colors (such as sequence numbers and possibly the metric barplots) are a bit
    light for light backgrounds. Let the user switch between dark and light
    themes; if possible detect the terminal's teme and set accordingly. In the
-   future, a rethink of the color scheme would be in order.
+   future, a rethink of the color scheme would be in order. Fixed in v1.1.0.
 
 1. [x] B0010: "No sequence found" with `data/test[13].fas`. What these have in
    common is that they have only 1 entry. => Fixed - was using nth(1) instead of

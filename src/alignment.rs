@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Thomas Junier
+
 mod permutation;
 
 use std::collections::HashMap;
 
 use itertools::Itertools;
 
-use crate::fasta::FastaFile;
+use crate::seq::file::SeqFile;
 
 use crate::alignment::SeqType::{Nucleic, Protein};
 
@@ -54,23 +55,33 @@ struct BestResidue {
 
 impl Alignment {
     // Makes an Alignment from a FastaFile, which is consumed.
-    pub fn new(fasta: FastaFile) -> Alignment {
+    pub fn new(fasta: SeqFile) -> Alignment {
         let mut headers: Vec<String> = Vec::new();
         let mut sequences: Vec<String> = Vec::new();
+        let mut max_len: usize = 0;
         for record in fasta {
             headers.push(record.header);
+            let l = record.sequence.len();
             sequences.push(record.sequence);
+            if l > max_len {
+                max_len = l;
+            }
         }
+        // Pad any sequence shorter than max_len, so we are not limited to alignments with exactly
+        // identical numbers of positions (reviewer suggestion).
+        sequences
+            .iter_mut()
+            .for_each(|s| *s = format!("{:<width$}", s, width = max_len));
+        // NOTE: the 's' can also be written '&*s', which makes the automatic re-borrow explicit.
         let consensus = consensus(&sequences);
         let entropies = entropies(&sequences);
         let densities = densities(&sequences);
-        let id_wrt_consensus = sequences.iter()
+        let id_wrt_consensus = sequences
+            .iter()
             .map(|seq| percent_identity(seq, &consensus))
             .collect();
-        let relative_seq_len = sequences.iter()
-            .map(|seq| seq_len_nogaps(seq))
-            .collect();
-        let first_seq = sequences.iter().nth(0);
+        let relative_seq_len = sequences.iter().map(|seq| seq_len_nogaps(seq)).collect();
+        let first_seq = sequences.first();
         let macromolecule_type = seq_type(first_seq.expect("No sequence found."));
 
         Alignment {
@@ -121,7 +132,8 @@ pub fn consensus(sequences: &Vec<String>) -> String {
             if br.residue.is_alphabetic() {
                 consensus.push(br.residue.to_ascii_lowercase());
             } else {
-                consensus.push('-');
+                //consensus.push('-');
+                consensus.push(br.residue);
             }
         } else {
             consensus.push('*');
@@ -146,9 +158,9 @@ pub fn col_density(sequences: &Vec<String>, col: usize) -> f64 {
     for seq in sequences {
         match seq.as_bytes()[col] as char {
             'a'..='z' | 'A'..='Z' => mass += 1,
-            '-' | '.' => {}
+            '-' | '.' | ' ' => {}
             other => {
-                panic!("Character {other} unexpected in an alignment.");
+                panic!("Character {other} unexpected in an alignment.\nThis might be due to file format, please see option -f.");
             }
         }
     }
@@ -204,12 +216,15 @@ fn entropy(freqs: &ResidueDistribution) -> f64 {
             p * p.ln()
         })
         .sum();
-    -1.0 * sum
+
+    -sum
 }
 
 fn percent_identity(s1: &str, s2: &str) -> f64 {
-    let num_identical = s1.chars().zip(s2.chars())
-        .filter(|(c1, c2)| c1.to_ascii_uppercase() == c2.to_ascii_uppercase())
+    let num_identical = s1
+        .chars()
+        .zip(s2.chars())
+        .filter(|(c1, c2)| c1.eq_ignore_ascii_case(c2))
         .count();
     num_identical as f64 / s1.len() as f64
 }
@@ -222,12 +237,11 @@ fn seq_type(sequence: &str) -> SeqType {
     let counts = sequence.to_lowercase().chars().counts();
     let counts_u64: HashMap<char, u64> = counts.into_iter().map(|(k, v)| (k, v as u64)).collect();
     let frequencies = to_freq_distrib(&counts_u64);
-    let nt_freq: f64 = 
-        *frequencies.get(&'a').unwrap_or(&0.0) + 
-        *frequencies.get(&'c').unwrap_or(&0.0) + 
-        *frequencies.get(&'g').unwrap_or(&0.0) + 
-        *frequencies.get(&'t').unwrap_or(&0.0) + 
-        *frequencies.get(&'u').unwrap_or(&0.0);
+    let nt_freq: f64 = *frequencies.get(&'a').unwrap_or(&0.0)
+        + *frequencies.get(&'c').unwrap_or(&0.0)
+        + *frequencies.get(&'g').unwrap_or(&0.0)
+        + *frequencies.get(&'t').unwrap_or(&0.0)
+        + *frequencies.get(&'u').unwrap_or(&0.0);
     // A quick-and dirty heuristic, I'm afraid
     if nt_freq > 0.75 {
         Nucleic
@@ -239,9 +253,12 @@ fn seq_type(sequence: &str) -> SeqType {
 #[cfg(test)]
 mod tests {
     use crate::alignment::{
-        best_residue, consensus, densities, entropies, entropy, percent_identity, res_count, seq_len_nogaps, seq_type, to_freq_distrib, Alignment, BestResidue, ResidueCounts, ResidueDistribution, SeqType::{Nucleic, Protein},
+        best_residue, consensus, densities, entropies, entropy, percent_identity, res_count,
+        seq_len_nogaps, seq_type, to_freq_distrib, Alignment, BestResidue, ResidueCounts,
+        ResidueDistribution,
+        SeqType::{Nucleic, Protein},
     };
-    use crate::fasta::read_fasta_file;
+    use crate::seq::fasta::read_fasta_file;
     use approx::assert_relative_eq;
     use std::collections::HashMap;
 
@@ -346,7 +363,11 @@ mod tests {
     fn test_entropy_2() {
         let eps = 0.00001;
         let distrib: ResidueDistribution = ResidueDistribution::from([('A', 0.5), ('F', 0.5)]);
-        assert_relative_eq!(0.6931471805599453, entropy(&distrib), epsilon = eps);
+        // This should be ln(2), and as it happens Rust has a constant for this; remarkably, clippy
+        // detects the literal constant below and suggests using the (arguably more accurate)
+        // built-in definition.
+        // assert_relative_eq!(0.6931471805599453, entropy(&distrib), epsilon = eps);
+        assert_relative_eq!(std::f64::consts::LN_2, entropy(&distrib), epsilon = eps);
     }
 
     #[test]
@@ -445,10 +466,15 @@ mod tests {
         assert_eq!(Nucleic, seq_type("cgatgcacgatgcncagtgtuucgatcga"));
     }
 
-
     #[test]
     fn test_seq_type_15() {
         assert_eq!(Nucleic, seq_type("UUTGAU"));
     }
 
+    // Make sure seq files with unequal lengths get correctly padded
+    #[test]
+    fn test_unequal_seq_len() {
+        let fasta = read_fasta_file("./data/test5.aln").unwrap();
+        let _ = Alignment::new(fasta);
+    }
 }

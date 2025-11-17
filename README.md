@@ -1,6 +1,6 @@
 ![Build](https://github.com/sib-swiss/termal/actions/workflows/ci.yml/badge.svg)
 [![crates.io](https://img.shields.io/crates/v/termal-msa.svg)](https://crates.io/crates/termal-msa)
-[![DOI](https://zenodo.org/badge/976490057.svg)](https://doi.org/10.5281/zenodo.15352914)
+[![DOI](https://zenodo.org/badge/976490057.svg)](https://doi.org/10.5281/zenodo.15472432)
 
 Summary
 =======
@@ -9,7 +9,9 @@ Termal is a program for examining multiple sequence **al**ignments in a **term**
 
 * No installer (just download and uncompress)
 * No dependencies
-* Best results in a terminal that supports 24-bit ("true color") color output
+* Reads FastA and Stockholm formats
+* Best results in a fast terminal that supports 24-bit ("true color") color
+  (see LIMITATIONS below for details).
 
 Quick Start 
 ============
@@ -19,41 +21,51 @@ alignment (see below). Press "`?`" for help.
 
 ### Linux (x86_64)
 
-* [Download](https://github.com/sib-swiss/termal/releases/download/v1.1.0/termal-v1.0.0-linux-x86_64.tar.gz)
+* [Download](https://github.com/sib-swiss/termal/releases/download/v1.1.0/termal-v1.1.0-linux-x86_64.tar.gz)
 
 ```bash
-tar -xzf termal-v1.1.0-linux-x86_64.tar.gz
-./termal data/example-1.msa
+$ tar -xzf termal-v1.1.0-linux-x86_64.tar.gz
+$ ./termal data/example-1.msa
 ```
 
 ---
 
 ### Windows
 
-* [Download](https://github.com/sib-swiss/termal/releases/download/v1.1.0/termal-v1.0.0-windows-x86_64.zip)
+* [Download](https://github.com/sib-swiss/termal/releases/download/v1.1.0/termal-v1.1.0-windows-x86_64.zip)
 
 1. Unzip the archive
 2. Open a terminal and run:
 
 ```powershell
-termal.exe example-1.msa
+C:\Users\User> termal.exe example-1.msa
 ```
 
 ---
 
 ### macOS
 
-* [Download](https://github.com/sib-swiss/termal/releases/download/v1.1.0/termal-v1.0.0-macos-x86_64.tar.gz)
+* [Download](https://github.com/sib-swiss/termal/releases/download/v1.1.0/termal-v1.1.0-macos-x86_64.tar.gz)
 
 ```bash
-tar -xzf termal-v1.1.0-macos-x86_64.tar.gz
-./termal data/example-1.msa
+$ tar -xzf termal-v1.1.0-macos-x86_64.tar.gz
+$ xattr -d com.apple.quarantine ./termal
+$ ./termal data/example-1.msa
 ```
 
+**NOTE**: The `xattr` command removes the "quarantine flag". This is required
+for binaries to run unless they're "official" (signed/notarized  by Apple). This
+can also be done by opening _System Settings -> Privacy & Security_. 
+
 Tested on:
+==========
+
 - Linux (EndeavourOS Build-ID 2024-01-15)
-- macOS 10.13.6 (High Sierra)
 - Windows 11
+- macOS 10.13.6 (High Sierra) and 15.1 (Sequoia)
+
+Known to compile with Rust 1.79 and newer; may compile on earlier versions (not
+checked).
 
 Synopsis
 ========
@@ -63,6 +75,12 @@ Just pass your alignment as argument to the `termal` binary:
 ```bash
 $ termal [options] <alignment>
 ```
+
+For help, just do
+
+```bash
+$ termal -h # or --help
+``` 
 
 Interface
 =========
@@ -77,34 +95,33 @@ the console, run `termal -b`. The main bindings are as follows:
 
 ### Motion
 
-arrows: scroll 1 column/line; shift-arrows : scroll 1 screenful
-        h,j,k,l are aliases for left, down, up, and right arrow
-^,G,g,$: full left, bottom, top, full right
+arrows: scroll 1 column/line; shift-arrows : scroll 1 screenful \
+`h`,`j`,`k`,`l` are aliases for left, down, up, and right arrow \
+`^`,`G`,`g`,`$`: full left, bottom, top, full right
 
 ### Zooming
 
-z,Z: cycle through zoom modes
+`z`,`Z`: cycle through zoom modes
 
 ### Adjusting the Panes
 
-<,>: widen/narrow label pane
-a  : hide/show label pane
-c  : hode/show consensus pane
-f  : toggle fullscreen alignment pane
+`<`,`>`: widen/narrow label pane \
+`a`  : hide/show label pane \
+`c`  : hide/show consensus pane \
+`f`  : toggle fullscreen alignment pane
 
 ### Video
 
-s: next color scheme
-m: next color map
-i: toggle inverse/direct video
+`s`: next color scheme           \
+`m`: next color map              \
+`i`: toggle inverse/direct video 
 
 Try dark/inverse for best results (this is the default).
 
 ### Metrics and Orderings
 
-o: next ordering
-t: next metric
-
+`o`: next ordering \
+`t`: next metric
 
 Features
 ========
@@ -116,6 +133,7 @@ Termal has the basic features you'd expect of an alignment viewer, such as:
 * consensus sequence
 * residue coloring
 * representation of conservation
+* ordering of sequences by length or similarity to consensus
 
 Zooming
 -------
@@ -128,16 +146,15 @@ alignment, there are two options:
 * Scrolling: this simply shifts the displayed portion ("view port") of the
   alignment left, right, up, or down. One can move by a single line (sequence)
   or column (position), by screenfuls, or directly to the top, bottom, leftmost,
-  or rightmost positions. This is done with the motion keys, including arrows
+  or rightmost positions. This is done with the motion keys, including arrows.
 
 * Zooming Out: this shows the first and last sequences, as well as evenly-spaced
   sequences in between so as to show as many sequences as possible. The same
   sampling is applied to columns. A box shows the location of the view port,
   that is, what part of the alignment would fill the alignment area when zooming
   back in. The zoom box can be moved using the same commands as for scrolling
-  (see above). A variant of zooming out will sample rows and columns will
-  preserve the aspect ratio of the alignment, at the expense of potentially
-  fewer sequences or columns shown.
+  (see above). A variant of zooming out will preserve the aspect ratio of the
+  alignment, at the expense of potentially fewer sequences or columns shown.
 
 Colors and Themes
 -----------------
@@ -179,7 +196,7 @@ $ termal data/aln4.pep
 │14│Osp1_01723 │ELTDGFHVLKDVLKVNGIDTMYGVVGIPITNLARLWEQDGQKFYSFRHEQHAGYAASIAGYIHGDKPGVC│
 │15│Osp2_01577 │ELTDGFHVLMDTLKMNDIDTMYGVVGIPITNLARLWEQDGQKFYSFRHEQHAGYAASIAGYIQGDKPGVC│
 │16│Osp3_01912 │ELTDGFHVLIDALKMNDIDTMYGVVGIPITNLARLWQDDGQRFYSFRHEQHAGYAASIAGYIEG-KPGVC│
-└──└───────────└🬹🬹🬹🬹🬹🬹🬹🬹🬹═══════════════════════════════════════════════════════┘
+└──└───────────└🬹🬹🬹🬹🬹🬹🬹🬹🬹═════════════════════════════════════════════════════════════┘
 │              │|    :    |    :    |    :    |    :    |    :    |    :    |    :    │
 │Position      │0        10        20        30        40        50        60        7│
 │Consensus     │elTDGFHlvIDALKlNgIdtiYGvpGIPITdLaRlaqadGmrviSFRHEQnAGyAAaIAGyltk-KPGVC│
@@ -189,12 +206,12 @@ $ termal data/aln4.pep
 
 **Notes**
 
-1. The above example shows `termal` in monochrome mode due to limitations in
-   Markdown rendring, but by default Termal uses colours, e.g. to reflect amino
-   acid chemistry.
-2. The above example had to be slightly tweaked because the separation line
-   between the main and bottom panel is rendered too wide in some Markdown
-   engines.
+1. The above example appears in monochrome due to limitations in Markdown
+   rendering, but by default Termal uses colours, e.g. to reflect amino acid
+   chemistry.
+2. The above example is rendered correctly by GitHub's Markdown engine, but
+   others may incorrectly render some characters, resulting in incorrect line
+   lengths.
 
 Motivations
 ===========
@@ -213,8 +230,8 @@ for two reasons:
 Like for any other input data, it's a good idea to have a quick look at an
 alignment before it is fed to an analysis pipeline. There are many fine tools
 for doing this, but most of them have a graphical user interface, so they
-  (usually) can't be used over SSH. A multiple sequence alignment is basically
-  just text, so it is well suited for a text interface.
+(usually) can't be used over SSH. A multiple sequence alignment is basically
+just text, so it is well suited for a text interface.
 
 Secondary
 ---------
@@ -227,11 +244,28 @@ terminal, such as:
   the program and alignment to load.
 * Not needing to leave one's work environment - use `termal` on an alignment
   like you would use `less`, `bat`, etc. on any text file.
+* Some CLI alignment viewers insist that FastA headers conform to a specific format
+  before displaying the alignment - `termal` has no such restrictions.
 
-BUGS AND LIMITATIONS
-====================
+BUGS
+====
 
-* Currently, Termal can only read Fasta alignments (i.e., no Phylip or other formats).
+* The list of known bugs is currently (2025-08-14, Termal v. 1.1.0) empty.
+
+LIMITATIONS
+===========
+
+* Currently, Termal can only read Fasta- and Stockholm-formatted alignments
+  (i.e., no Phylip or other formats). The default is FastA; to specify
+  Stockholm, pass `-f stockholm` (or just `-f s`).
+* For best results, use a fast terminal emulator like
+  [Kitty](https://sw.kovidgoyal.net/kitty), [Alacritty](https://alacritty.org),
+  [Ghostty](https://ghostty.org), or [WezTerm](https://wezterm.org).
+* Support for 24-bit color ("full color") is highly recommended. This is
+  featured by most modern terminal emulators, with the notable exception of
+  macOS' _Terminal_. Mac users may wish to try one of the above, or else
+  try [Iterm2](https://iterm2.com).
+
 
 LICENSE
 =======
