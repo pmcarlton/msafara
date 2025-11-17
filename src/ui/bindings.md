@@ -21,7 +21,7 @@ f  : toggle fullscreen alignment pane
 
 ## Video
 
-s: next color scheme
+s,S: next/previous color scheme
 m,M: next/previous color map
 i: toggle inverse/direct video
 

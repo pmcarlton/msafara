@@ -465,6 +465,12 @@ impl<'a> UI<'a> {
         self.current_color_scheme_index %= self.color_schemes.len();
     }
 
+    pub fn prev_color_scheme(&mut self) {
+        let nb_color_schemes = self.color_schemes.len();
+        self.current_color_scheme_index += nb_color_schemes - 1;
+        self.current_color_scheme_index %= nb_color_schemes;
+    }
+
     pub fn set_monochrome(&mut self) {
         // NOTE: this relies on the convention that the monochrome color scheme is last in the
         // list.

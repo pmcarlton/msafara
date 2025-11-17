@@ -181,6 +181,8 @@ pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
 
             KeyCode::Char('s') => ui.next_color_scheme(),
 
+            KeyCode::Char('S') => ui.prev_color_scheme(),
+
             // Switch to next colormap in the list
             KeyCode::Char('m') => ui.next_colormap(),
 
