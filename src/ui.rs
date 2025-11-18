@@ -468,15 +468,16 @@ impl<'a> UI<'a> {
             match cs.theme {
                 Theme::Monochrome => {}
                 _ => {
-                    let cmap = colormap_gecos(cmap_fname);
-                    cs.add_colormap(cmap);
+                    let get_cmap = colormap_gecos(cmap_fname);
+                    match get_cmap {
+                        Ok(cmap) => cs.add_colormap(cmap),
+                        Err(_) => self.message = format!(
+                            "Error reading {}.", cmap_fname),
+                    }
                 }
             }
         }
     }
-
-    // FIXME: this method is in the singular, but the one it delegates to is in the plural. Call it
-    // next_... instead of cycle_... Also change other cycle*, replace with next_ and prev_.
 
     pub fn next_colormap(&mut self) {
         let cs: &mut ColorScheme = self.color_scheme_mut();

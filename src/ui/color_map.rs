@@ -9,6 +9,7 @@ use ratatui::prelude::Color;
 
 use serde_json::Value::Object;
 
+use crate::TermalError;
 use crate::ui::color_scheme::{
     CLUSTALX_BLUE, CLUSTALX_CYAN, CLUSTALX_GREEN, CLUSTALX_MAGENTA, CLUSTALX_ORANGE, CLUSTALX_PINK,
     CLUSTALX_RED, CLUSTALX_YELLOW, JALVIEW_NUCLEOTIDE_A, JALVIEW_NUCLEOTIDE_B,
@@ -268,8 +269,8 @@ pub fn color_map_jalview_nt() -> ColorMap {
     )
 }
 
-pub fn colormap_gecos(path: &str) -> ColorMap {
-    let file = File::open(path).unwrap();
+pub fn colormap_gecos(path: &str) -> Result<ColorMap, TermalError> {
+    let file = File::open(path)?;
     let reader = BufReader::new(file);
     let cm: serde_json::Value = serde_json::from_reader(reader).unwrap();
 
@@ -291,5 +292,5 @@ pub fn colormap_gecos(path: &str) -> ColorMap {
         color_map.insert('-', Color::Gray);
     }
 
-    ColorMap::new("custom".into(), color_map)
+    Ok(ColorMap::new("custom".into(), color_map))
 }
