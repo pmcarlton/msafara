@@ -37,7 +37,6 @@ use crate::alignment::Alignment;
 use crate::app::App;
 use crate::errors::TermalError;
 use crate::ui::{
-    color_map::colormap_gecos,
     key_handling::handle_key_press,
     render::render_ui,
     {ZoomLevel, UI},
@@ -173,10 +172,19 @@ fn main() -> Result<(), TermalError> {
             SeqFileFormat::Stockholm => read_stockholm_file(seq_filename)?,
         };
         let alignment = Alignment::new(seq_file);
+        let mut ordering_err_msg: Option<String> = None;
         let user_ordering = match cli.user_order {
             Some(fname) => {
-                let ord_vec = read_user_ordering(&fname)?;
-                Some(ord_vec)
+                // TODO: should be called from_path()
+                let get_ord_vec = read_user_ordering(&fname);
+                match get_ord_vec {
+                    Ok(ord_vec) => Some(ord_vec),
+                    Err(_) => {
+                        ordering_err_msg = Some(format!("Error reading ordering file {}",
+                            fname));
+                        None
+                    }
+                }
             }
             None => None,
         };
@@ -225,10 +233,11 @@ fn main() -> Result<(), TermalError> {
         if cli.hide_bottom_pane {
             app_ui.set_bottom_pane_height(0);
         }
-
         if let Some(path) = cli.color_map {
-            let _cmap = colormap_gecos(path);
-            // TODO: add to colormaps (and remove the underscore)
+            app_ui.add_user_colormap(&path);
+        }
+        if let Some(msg) = ordering_err_msg {
+            app_ui.error_msg(msg);
         }
 
         // main loop

@@ -17,8 +17,13 @@ use ratatui::style::{Color, Style};
 
 use crate::{
     ui::color_scheme::{ColorScheme, Theme},
+    ui::color_map::colormap_gecos,
     App,
 };
+
+
+pub const INFO_MSG_BG: Color = Color::Black;
+pub const ERROR_MSG_BG: Color = Color::Red;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ZoomLevel {
@@ -89,6 +94,7 @@ pub struct UI<'a> {
     show_help: bool,
     full_screen: bool,
     message: String, // Simple, 1-line message (possibly just "", no need for Option IMHO)
+    message_bg: Color,
     video_mode: VideoMode,
 }
 
@@ -120,6 +126,7 @@ impl<'a> UI<'a> {
             show_help: false,
             full_screen: false,
             message: " Press '?' for help ".into(),
+            message_bg: INFO_MSG_BG,
             video_mode: VideoMode::Inverse,
         }
     }
@@ -467,15 +474,22 @@ impl<'a> UI<'a> {
         self.current_color_scheme_index = self.color_schemes.len() - 1;
     }
 
-    pub fn next_colormap(&mut self) {
-        // FIXME Can't this be done in 1 line?
-        let cs: &mut ColorScheme = self.color_scheme_mut();
-        cs.next_colormap();
+    pub fn add_user_colormap(&mut self, cmap_fname: &String) {
+        let get_cmap = colormap_gecos(cmap_fname);
+        match get_cmap {
+            Ok(cmap) => {
+                // Iterate over color schemes, add cmap unless monochrome
+                for cs in &mut self.color_schemes {
+                    cs.add_colormap(cmap.clone());
+                }
+            }
+            Err(_) => self.error_msg(format!( "Error reading colormap {}.", cmap_fname)),
+        }
     }
 
-    pub fn prev_colormap(&mut self) {
+    pub fn next_colormap(&mut self) {
         let cs: &mut ColorScheme = self.color_scheme_mut();
-        cs.prev_colormap();
+        cs.next_colormap();
     }
 
     pub fn toggle_video_mode(&mut self) {
@@ -615,6 +629,20 @@ impl<'a> UI<'a> {
     pub fn jump_to_end(&mut self) {
         self.leftmost_col = self.max_leftmost_col()
     }
+
+    // Modeline & messaging
+    
+    pub fn error_msg(&mut self, msg: impl Into<String>) {
+        self.message = msg.into();
+        self.message_bg = ERROR_MSG_BG;
+    }
+
+    pub fn info_msg(&mut self, msg: impl Into<String>) {
+        self.message = msg.into();
+        self.message_bg = INFO_MSG_BG;
+    }
+
+    pub fn clear_msg(&mut self) { self.info_msg(""); }
 
     // Debugging
 

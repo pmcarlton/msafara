@@ -123,6 +123,10 @@ impl ColorScheme {
         }
     }
 
+    pub fn add_colormap(&mut self, cmap: ColorMap) {
+        self.residue_colormaps.push(cmap);
+    }
+
     pub fn current_residue_colormap(&self) -> &ColorMap {
         &(self.residue_colormaps[self.residue_colormap_index])
     }
