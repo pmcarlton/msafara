@@ -492,6 +492,11 @@ impl<'a> UI<'a> {
         cs.next_colormap();
     }
 
+    pub fn prev_colormap(&mut self) {
+        let cs: &mut ColorScheme = self.color_scheme_mut();
+        cs.prev_colormap();
+    }
+
     pub fn toggle_video_mode(&mut self) {
         self.video_mode = match self.video_mode {
             VideoMode::Direct => VideoMode::Inverse,
