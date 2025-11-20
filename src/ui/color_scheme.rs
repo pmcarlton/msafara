@@ -123,8 +123,10 @@ impl ColorScheme {
         }
     }
 
+    // Inserts a colormap and returns the index at which the map was inserted (namely, the last
+    // valid index in the vec).
     pub fn add_colormap(&mut self, cmap: ColorMap) {
-        self.residue_colormaps.push(cmap);
+        self.residue_colormaps.insert(0, cmap);
     }
 
     pub fn current_residue_colormap(&self) -> &ColorMap {

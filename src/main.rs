@@ -235,6 +235,7 @@ fn main() -> Result<(), TermalError> {
         }
         if let Some(path) = cli.color_map {
             app_ui.add_user_colormap(&path);
+            app_ui.prev_colormap();
         }
         if let Some(msg) = ordering_err_msg {
             app_ui.error_msg(msg);
