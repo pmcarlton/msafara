@@ -100,13 +100,17 @@ impl App {
                 self.ordering = (0..self.alignment.num_seq()).collect();
             }
             User => {
+                // Do not change ordering if no user ordering provided, or if it had
+                // problems (this is checked early on, in main(), around l. 180 (as of commit
+                // 13a2e2e).). 
                 match &self.user_ordering {
                     None => {
-                        // Do not change ordering if no user ordering provided; better yet: prevent
-                        // ordering_criterion from being set to User if no user ordering was
-                        // provided.
-                    }
+                        // Note: self.ordering_criterion is not supposed to have value 'User' unless a
+                        // valid ordering was supplied (see prev_ordering_criterion() and
+                        // next_ordering_criterion()).
+                    } 
                     Some(uord_vec) => {
+                        // Good ordering
                         // Technically, we could index by &str, but I'm not sure we'd gain a lot.
                         let mut hdr2rank: HashMap<String, usize> = HashMap::new();
                         for (idx, hdr) in self.alignment.headers
@@ -115,6 +119,8 @@ impl App {
                         }
                         // Iterate over ordering, looking up file index from the above hash.
                         let mut result: Vec<usize> = Vec::new();
+                        // TODO: now that we no check for discrepancies here, this should be
+                        //feasible in a sinmple map.
                         for hdr in uord_vec.iter() {
                             match hdr2rank.get(hdr) {
                                 Some(rank) => result.push(*rank),
@@ -122,15 +128,7 @@ impl App {
                             }
                             
                         }
-                        // If result's length is not the same as the number of sequences in the
-                        // alignment, there was a problem (most likely a header was not found in
-                        // the hdr2rank hash above) -> do nothing. TODO: warn the user, if possible
-                        // once and for all and as early as possible (if user passes -o, do the
-                        // check as soon as we have an Alignment struct).
-                        if result.len() == self.alignment.headers.len() {
-                            self.ordering = result;
-                        } else {
-                        }
+                        self.ordering = result;
                     }
                 }
             }
@@ -141,7 +139,11 @@ impl App {
         self.ordering_criterion = match self.ordering_criterion {
             SourceFile => MetricIncr,
             MetricIncr => MetricDecr,
-            MetricDecr => User,
+            // move to User IFF valid ordering
+            MetricDecr => match self.user_ordering {
+                            Some(_) => User,
+                            None => SourceFile,
+                          },
             User       => SourceFile, 
         };
         self.recompute_ordering();
@@ -152,7 +154,11 @@ impl App {
             MetricIncr => SourceFile,
             MetricDecr => MetricIncr,
             User       => MetricDecr,
-            SourceFile => User,
+            // move to User IFF valid ordering
+            SourceFile => match self.user_ordering {
+                            Some(_) => User,
+                            None => MetricDecr,
+            },
         };
         self.recompute_ordering();
     }

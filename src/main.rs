@@ -175,7 +175,7 @@ fn main() -> Result<(), TermalError> {
         };
         let alignment = Alignment::new(seq_file);
         let mut ordering_err_msg: Option<String> = None;
-        let user_ordering = match cli.user_order {
+        let mut user_ordering = match cli.user_order {
             Some(fname) => {
                 // TODO: should be called from_path()
                 let get_ord_vec = read_user_ordering(&fname);
@@ -184,12 +184,14 @@ fn main() -> Result<(), TermalError> {
                     Err(_) => {
                         ordering_err_msg = Some(format!("Error reading ordering file {}",
                             fname));
-                        None
+                        None // => App ignores bad user ordering
                     }
                 }
             }
             None => None,
         };
+        // Check for discrepancies beween the user-specied ordering and alignment headers. The two
+        // sets should be identical.
         if let Some(ref ord_vec) = user_ordering {
             let mut uo_clone = ord_vec.clone();
             let mut ah_clone = alignment.headers.clone();
@@ -198,6 +200,8 @@ fn main() -> Result<(), TermalError> {
             if uo_clone != ah_clone {
                 ordering_err_msg = Some(
                     String::from("Discrepancies in ordering vs alignment"));
+                // App must ignore bad user ordering
+                user_ordering = None;
             }
         };
         let mut app = App::new(seq_filename, alignment,
