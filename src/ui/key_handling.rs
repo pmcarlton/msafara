@@ -13,9 +13,9 @@ use crate::{ZoomLevel, UI};
 pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
     let mut done = false;
     match &ui.input_mode {
-        Normal => done = dispatch_command(ui, key_event),
+        Normal => done = handle_normal_key(ui, key_event),
         Help => ui.input_mode = InputMode::Normal,
-        PendingCount { count: usize } => todo!(),
+        PendingCount { count } => done = handle_pending_count_key(ui, key_event, *count),
         Search {
             pattern: String,
             direction: SearchDirection,
@@ -24,14 +24,43 @@ pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
     done
 }
 
-fn dispatch_command(ui: &mut UI, key_event: KeyEvent) -> bool {
+fn handle_normal_key(ui: &mut UI, key_event: KeyEvent) -> bool {
     let mut done = false;
+    match key_event.code {
+        // 1-9: enter pending count mode
+        KeyCode::Char(c) if c.is_ascii_digit() && c != '0' => {
+            let d = (c as u8 - b'0') as usize;
+            ui.input_mode = InputMode::PendingCount { count: d };
+        }
+        KeyCode::Char('q') => done = true,
+        // TODO: search
+        KeyCode::Char('?') => ui.input_mode = InputMode::Help,
+        // Anything else: dispatch corresponding command, without count
+        _ => dispatch_command(ui, key_event, None),
+    }
+    done
+}
+
+fn handle_pending_count_key(ui: &mut UI, key_event: KeyEvent, count: usize) -> bool {
+    match key_event.code {
+        KeyCode::Char(c) if c.is_ascii_digit() => {
+            let d = (c as u8 - b'0') as usize; 
+            let updated_count = count.saturating_mul(10).saturating_add(d);
+            ui.input_mode = InputMode::PendingCount { count: updated_count };
+        }
+        KeyCode::Esc => ui.input_mode = InputMode::Normal,
+        _ => {
+            ui.input_mode = InputMode::Normal;
+            dispatch_command(ui, key_event, Some(count));
+        }
+    }
+}
+
+fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) {
+    let count = count_arg.unwrap_or(1);
 
     // debug!("key event: {:#?}", key_event.code);
     match key_event.code {
-        // Help
-        KeyCode::Char('?') => ui.input_mode = InputMode::Help,
-
         // ----- Hide/Show panes -----
 
         // Left pane
@@ -224,6 +253,4 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent) -> bool {
             // ui.message = format!("Key '{:#?}' is not bound.", key_event.code);
         }
     }
-
-    done
 }
