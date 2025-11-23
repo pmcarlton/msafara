@@ -559,9 +559,9 @@ impl<'a> UI<'a> {
     }
 
     pub fn scroll_one_line_down(&mut self, count: u16) {
-        if self.top_line + count <= self.max_top_line() {
-            self.top_line += count;
-        }
+        let new_top_line = min(self.top_line + count,
+            self.max_top_line());
+        self.top_line = new_top_line;
     }
 
     pub fn scroll_one_col_right(&mut self) {
