@@ -24,6 +24,7 @@ use crate::{
 
 pub const INFO_MSG_BG: Color = Color::Black;
 pub const ERROR_MSG_BG: Color = Color::Red;
+pub const COUNT_MSG_BG: Color = Color::Blue;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ZoomLevel {
@@ -652,6 +653,11 @@ impl<'a> UI<'a> {
 
     // Modeline & messaging
     
+    pub fn clear_msg(&mut self) {
+        self.message = "".into();
+        self.message_bg = INFO_MSG_BG;
+    }
+
     pub fn error_msg(&mut self, msg: impl Into<String>) {
         self.message = msg.into();
         self.message_bg = ERROR_MSG_BG;
@@ -662,7 +668,10 @@ impl<'a> UI<'a> {
         self.message_bg = INFO_MSG_BG;
     }
 
-    pub fn clear_msg(&mut self) { self.info_msg(""); }
+    pub fn add_count_digit(&mut self, digit: char) {
+        self.message.push(digit);
+        self.message_bg = COUNT_MSG_BG;
+    }
 
     // Debugging
 

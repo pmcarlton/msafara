@@ -31,6 +31,8 @@ fn handle_normal_key(ui: &mut UI, key_event: KeyEvent) -> bool {
         KeyCode::Char(c) if c.is_ascii_digit() && c != '0' => {
             let d = (c as u8 - b'0') as usize;
             ui.input_mode = InputMode::PendingCount { count: d };
+            ui.clear_msg();
+            ui.add_count_digit(c);
         }
         // Q, q, and Ctrl-C quit
         KeyCode::Char('q') | KeyCode::Char('Q') => done = true,
