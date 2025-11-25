@@ -58,8 +58,14 @@ Urgent
 Normal
 ------
 
-1. [ ] After introducing input modes, check in particular the following:
-   quitting with Ctrl-C
+1. [ ] On Debian/UTM, I do not seem to get the SHIFT modifer when pressing
+   Shift-Up and Shift-Down (though it works for Shift-Left and Shift-Right). Use
+   See src/ui/key_handling.rs:148.
+
+1. [x] Esc clears any message as well as returning to Normal input mode.
+
+1. [x] After introducing input modes, check in particular the following:
+   quitting with Ctrl-C, Q, q
 
 1. [x] B0018 User should be warned if sequence labels in user-supplied orderings do not
    match those in the alignment (up to order, of course). First, the check is

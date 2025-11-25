@@ -6,7 +6,10 @@ mod color_scheme;
 pub mod key_handling;
 pub mod render;
 
-use std::{cmp::min, fmt};
+use std::{
+        cmp::{min, max},
+        fmt,
+};
 
 use log::debug;
 
@@ -22,9 +25,15 @@ use crate::{
 };
 
 
+pub const INFO_MSG_FG: Color = Color::White;
+pub const ERROR_MSG_FG: Color = Color::White;
+pub const COUNT_MSG_FG: Color = Color::White;
+pub const DEBUG_MSG_FG: Color = Color::Black;
+
 pub const INFO_MSG_BG: Color = Color::Black;
 pub const ERROR_MSG_BG: Color = Color::Red;
 pub const COUNT_MSG_BG: Color = Color::Blue;
+pub const DEBUG_MSG_BG: Color = Color::Cyan;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ZoomLevel {
@@ -109,6 +118,7 @@ pub struct UI<'a> {
     frame_size: Option<Size>, // whole app
     full_screen: bool,
     message: String, // Simple, 1-line message (possibly just "", no need for Option IMHO)
+    message_fg: Color,
     message_bg: Color,
     video_mode: VideoMode,
     input_mode: InputMode,
@@ -141,6 +151,7 @@ impl<'a> UI<'a> {
             frame_size: None,
             full_screen: false,
             message: " Press '?' for help ".into(),
+            message_fg: INFO_MSG_FG,
             message_bg: INFO_MSG_BG,
             video_mode: VideoMode::Inverse,
             input_mode: InputMode::Normal,
@@ -547,36 +558,28 @@ impl<'a> UI<'a> {
         self.show_scrollbars = false;
     }
 
-    pub fn scroll_one_line_up(&mut self) {
-        if self.top_line > 0 {
-            self.top_line -= 1;
-        }
+    pub fn scroll_one_line_up(&mut self, count: u16) {
+        self.top_line = max(0, self.top_line.saturating_sub(count));
     }
 
-    pub fn scroll_one_col_left(&mut self) {
-        if self.leftmost_col > 0 {
-            self.leftmost_col -= 1;
-        }
+    pub fn scroll_one_col_left(&mut self, count: u16) {
+        self.leftmost_col = max(0,
+            self.leftmost_col.saturating_sub(count));
     }
 
     pub fn scroll_one_line_down(&mut self, count: u16) {
-        let new_top_line = min(self.top_line + count,
+        self.top_line = min(self.top_line.saturating_add(count),
             self.max_top_line());
-        self.top_line = new_top_line;
     }
 
-    pub fn scroll_one_col_right(&mut self) {
-        if self.leftmost_col < self.max_leftmost_col() {
-            self.leftmost_col += 1;
-        }
+    pub fn scroll_one_col_right(&mut self, count: u16) {
+        self.leftmost_col = min(self.leftmost_col.saturating_add(count),
+            self.max_leftmost_col());
     }
 
-    pub fn scroll_one_screen_up(&mut self) {
-        if self.top_line > self.max_nb_seq_shown() {
-            self.top_line -= self.max_nb_seq_shown();
-        } else {
-            self.top_line = 0;
-        }
+    pub fn scroll_one_screen_up(&mut self, count: u16) {
+        self.top_line = self.top_line.saturating_sub(
+            count * self.max_nb_seq_shown());
     }
 
     pub fn scroll_one_screen_left(&mut self) {
@@ -587,12 +590,18 @@ impl<'a> UI<'a> {
         }
     }
 
-    pub fn scroll_one_screen_down(&mut self) {
+    pub fn scroll_one_screen_down(&mut self, count: u16) {
+        self.top_line = min(
+            self.top_line + count * self.max_nb_seq_shown(),
+            self.max_top_line()
+        )
+        /*
         if self.top_line + self.max_nb_seq_shown() < self.max_top_line() {
             self.top_line += self.max_nb_seq_shown();
         } else {
             self.top_line = self.max_top_line();
         }
+        */
     }
 
     pub fn scroll_one_screen_right(&mut self) {
@@ -608,7 +617,7 @@ impl<'a> UI<'a> {
         self.top_line = min(self.top_line, self.max_top_line());
     }
 
-    pub fn scroll_zoombox_one_line_up(&mut self) {
+    pub fn scroll_zoombox_one_line_up(&mut self, count: u16) {
         let lines_to_skip = (1.0 / self.v_ratio()).round() as u16;
         if lines_to_skip < self.top_line {
             self.top_line -= lines_to_skip;
@@ -653,22 +662,33 @@ impl<'a> UI<'a> {
     
     pub fn clear_msg(&mut self) {
         self.message = "".into();
+        // possibly not strictly needed:
+        self.message_fg = INFO_MSG_FG;
         self.message_bg = INFO_MSG_BG;
     }
 
     pub fn error_msg(&mut self, msg: impl Into<String>) {
         self.message = msg.into();
+        self.message_fg = ERROR_MSG_FG;
         self.message_bg = ERROR_MSG_BG;
     }
 
     pub fn info_msg(&mut self, msg: impl Into<String>) {
         self.message = msg.into();
+        self.message_fg = INFO_MSG_FG;
         self.message_bg = INFO_MSG_BG;
     }
 
     pub fn add_count_digit(&mut self, digit: char) {
         self.message.push(digit);
+        self.message_fg = COUNT_MSG_FG;
         self.message_bg = COUNT_MSG_BG;
+    }
+
+    pub fn debug_msg(&mut self, msg: impl Into<String>) {
+        self.message = msg.into();
+        self.message_fg = DEBUG_MSG_FG;
+        self.message_bg = DEBUG_MSG_BG;
     }
 
     // Debugging

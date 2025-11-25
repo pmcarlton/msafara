@@ -34,6 +34,7 @@ fn handle_normal_key(ui: &mut UI, key_event: KeyEvent) -> bool {
             ui.clear_msg();
             ui.add_count_digit(c);
         }
+        KeyCode::Esc => ui.clear_msg(),
         // Q, q, and Ctrl-C quit
         KeyCode::Char('q') | KeyCode::Char('Q') => done = true,
         KeyCode::Char('c') if key_event.modifiers.contains(KeyModifiers::CONTROL) => done = true,
@@ -57,7 +58,10 @@ fn handle_pending_count_key(ui: &mut UI, key_event: KeyEvent, count: usize) -> b
         // Q, q, and Ctrl-C quit
         KeyCode::Char('q') | KeyCode::Char('Q') => done = true,
         KeyCode::Char('c') if key_event.modifiers.contains(KeyModifiers::CONTROL) => done = true,
-        KeyCode::Esc => ui.input_mode = InputMode::Normal,
+        KeyCode::Esc => {
+            ui.input_mode = InputMode::Normal;
+            ui.clear_msg();
+        }
         _ => {
             ui.input_mode = InputMode::Normal;
             dispatch_command(ui, key_event, Some(count));
@@ -119,19 +123,19 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
                         }
                     },
                     KeyCode::Up => match ui.zoom_level() {
-                        ZoomLevel::ZoomedIn => ui.scroll_one_line_up(),
+                        ZoomLevel::ZoomedIn => ui.scroll_one_line_up(count as u16),
                         ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => {
-                            ui.scroll_zoombox_one_line_up()
+                            ui.scroll_zoombox_one_line_up(count as u16)
                         }
                     },
                     KeyCode::Right => match ui.zoom_level() {
-                        ZoomLevel::ZoomedIn => ui.scroll_one_col_right(),
+                        ZoomLevel::ZoomedIn => ui.scroll_one_col_right(count as u16),
                         ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => {
                             ui.scroll_zoombox_one_col_right()
                         }
                     },
                     KeyCode::Left => match ui.zoom_level() {
-                        ZoomLevel::ZoomedIn => ui.scroll_one_col_left(),
+                        ZoomLevel::ZoomedIn => ui.scroll_one_col_left(count as u16),
                         ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => {
                             ui.scroll_zoombox_one_col_left()
                         }
@@ -141,9 +145,10 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
                 }
             } else {
                 // Shifted arrow keys
+                ui.debug_msg("shift");
                 match key_event.code {
-                    KeyCode::Down => ui.scroll_one_screen_down(),
-                    KeyCode::Up => ui.scroll_one_screen_up(),
+                    KeyCode::Down => ui.scroll_one_screen_down(count as u16),
+                    KeyCode::Up => ui.scroll_one_screen_up(count as u16),
                     KeyCode::Right => ui.scroll_one_screen_right(),
                     KeyCode::Left => ui.scroll_one_screen_left(),
 
@@ -157,20 +162,20 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
             ZoomLevel::ZoomedIn => ui.scroll_one_line_down(count as u16),
             ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_line_down(count as u16),
         },
-        KeyCode::Char('J') | KeyCode::Char(' ') => ui.scroll_one_screen_down(),
+        KeyCode::Char('J') | KeyCode::Char(' ') => ui.scroll_one_screen_down(count as u16),
         KeyCode::Char('G') => ui.jump_to_bottom(),
 
         // Up
         KeyCode::Char('k') => match ui.zoom_level() {
-            ZoomLevel::ZoomedIn => ui.scroll_one_line_up(),
-            ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_line_up(),
+            ZoomLevel::ZoomedIn => ui.scroll_one_line_up(count as u16),
+            ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_line_up(count as u16),
         },
-        KeyCode::Char('K') => ui.scroll_one_screen_up(),
+        KeyCode::Char('K') => ui.scroll_one_screen_up(count as u16),
         KeyCode::Char('g') => ui.jump_to_top(),
 
         // Right
         KeyCode::Char('l') => match ui.zoom_level() {
-            ZoomLevel::ZoomedIn => ui.scroll_one_col_right(),
+            ZoomLevel::ZoomedIn => ui.scroll_one_col_right(count as u16),
             ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_col_right(),
         },
         KeyCode::Char('L') => ui.scroll_one_screen_right(),
@@ -178,7 +183,7 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
 
         // Left
         KeyCode::Char('h') => match ui.zoom_level() {
-            ZoomLevel::ZoomedIn => ui.scroll_one_col_left(),
+            ZoomLevel::ZoomedIn => ui.scroll_one_col_left(count as u16),
             ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_col_left(),
         },
         KeyCode::Char('H') => ui.scroll_one_screen_left(),
