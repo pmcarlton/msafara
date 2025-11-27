@@ -131,13 +131,13 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
                     KeyCode::Right => match ui.zoom_level() {
                         ZoomLevel::ZoomedIn => ui.scroll_one_col_right(count as u16),
                         ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => {
-                            ui.scroll_zoombox_one_col_right()
+                            ui.scroll_zoombox_one_col_right(count as u16)
                         }
                     },
                     KeyCode::Left => match ui.zoom_level() {
                         ZoomLevel::ZoomedIn => ui.scroll_one_col_left(count as u16),
                         ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => {
-                            ui.scroll_zoombox_one_col_left()
+                            ui.scroll_zoombox_one_col_left(count as u16)
                         }
                     },
 
@@ -147,10 +147,10 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
                 // Shifted arrow keys
                 ui.debug_msg("shift");
                 match key_event.code {
-                    KeyCode::Down => ui.scroll_one_screen_down(count as u16),
                     KeyCode::Up => ui.scroll_one_screen_up(count as u16),
-                    KeyCode::Right => ui.scroll_one_screen_right(),
-                    KeyCode::Left => ui.scroll_one_screen_left(),
+                    KeyCode::Left => ui.scroll_one_screen_left(count as u16),
+                    KeyCode::Down => ui.scroll_one_screen_down(count as u16),
+                    KeyCode::Right => ui.scroll_one_screen_right(count as u16),
 
                     _ => panic!("Expected only arrow keycodes"),
                 }
@@ -176,17 +176,17 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         // Right
         KeyCode::Char('l') => match ui.zoom_level() {
             ZoomLevel::ZoomedIn => ui.scroll_one_col_right(count as u16),
-            ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_col_right(),
+            ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_col_right(count as u16),
         },
-        KeyCode::Char('L') => ui.scroll_one_screen_right(),
+        KeyCode::Char('L') => ui.scroll_one_screen_right(count as u16),
         KeyCode::Char('$') => ui.jump_to_end(),
 
         // Left
         KeyCode::Char('h') => match ui.zoom_level() {
             ZoomLevel::ZoomedIn => ui.scroll_one_col_left(count as u16),
-            ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_col_left(),
+            ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_col_left(count as u16),
         },
-        KeyCode::Char('H') => ui.scroll_one_screen_left(),
+        KeyCode::Char('H') => ui.scroll_one_screen_left(count as u16),
         KeyCode::Char('^') => ui.jump_to_begin(),
 
         // Label Pane width

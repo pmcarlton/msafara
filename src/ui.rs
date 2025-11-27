@@ -559,12 +559,11 @@ impl<'a> UI<'a> {
     }
 
     pub fn scroll_one_line_up(&mut self, count: u16) {
-        self.top_line = max(0, self.top_line.saturating_sub(count));
+        self.top_line = self.top_line.saturating_sub(count);
     }
 
     pub fn scroll_one_col_left(&mut self, count: u16) {
-        self.leftmost_col = max(0,
-            self.leftmost_col.saturating_sub(count));
+        self.leftmost_col = self.leftmost_col.saturating_sub(count);
     }
 
     pub fn scroll_one_line_down(&mut self, count: u16) {
@@ -579,67 +578,50 @@ impl<'a> UI<'a> {
 
     pub fn scroll_one_screen_up(&mut self, count: u16) {
         self.top_line = self.top_line.saturating_sub(
-            count * self.max_nb_seq_shown());
+            count.saturating_mul(self.max_nb_seq_shown()));
     }
 
-    pub fn scroll_one_screen_left(&mut self) {
-        if self.leftmost_col > self.max_nb_col_shown() {
-            self.leftmost_col -= self.max_nb_col_shown();
-        } else {
-            self.leftmost_col = 0;
-        }
+    pub fn scroll_one_screen_left(&mut self, count: u16) {
+        self.leftmost_col = self.leftmost_col.saturating_sub(
+            count.saturating_mul(self.max_nb_col_shown()));
     }
 
     pub fn scroll_one_screen_down(&mut self, count: u16) {
         self.top_line = min(
-            self.top_line + count * self.max_nb_seq_shown(),
+            self.top_line.saturating_add(
+                count.saturating_mul(self.max_nb_seq_shown())),
             self.max_top_line()
-        )
-        /*
-        if self.top_line + self.max_nb_seq_shown() < self.max_top_line() {
-            self.top_line += self.max_nb_seq_shown();
-        } else {
-            self.top_line = self.max_top_line();
-        }
-        */
+        );
     }
 
-    pub fn scroll_one_screen_right(&mut self) {
-        if self.leftmost_col + self.max_nb_col_shown() < self.max_leftmost_col() {
-            self.leftmost_col += self.max_nb_col_shown();
-        } else {
-            self.leftmost_col = self.max_leftmost_col();
-        }
-    }
-
-    pub fn scroll_zoombox_one_line_down(&mut self, count: u16) {
-        self.top_line += (count as f64 / self.v_ratio()).round() as u16;
-        self.top_line = min(self.top_line, self.max_top_line());
+    pub fn scroll_one_screen_right(&mut self, count: u16) {
+        self.leftmost_col = min(
+            self.leftmost_col.saturating_add(
+                count.saturating_mul(self.max_nb_col_shown())),
+            self.max_leftmost_col()
+        );
     }
 
     pub fn scroll_zoombox_one_line_up(&mut self, count: u16) {
-        let lines_to_skip = (1.0 / self.v_ratio()).round() as u16;
-        if lines_to_skip < self.top_line {
-            self.top_line -= lines_to_skip;
-        } else {
-            self.top_line = 0;
-        }
+        self.top_line = self.top_line.saturating_sub( 
+            (count as f64 / self.v_ratio()).round() as u16);
     }
 
-    pub fn scroll_zoombox_one_col_right(&mut self) {
-        self.leftmost_col += (1.0 / self.h_ratio()).round() as u16;
-        if self.leftmost_col > self.max_leftmost_col() {
-            self.leftmost_col = self.max_leftmost_col();
-        }
+    pub fn scroll_zoombox_one_col_left(&mut self, count: u16) {
+        self.leftmost_col = self.leftmost_col.saturating_sub(
+            (count as f64 / self.h_ratio()).round() as u16);
     }
 
-    pub fn scroll_zoombox_one_col_left(&mut self) {
-        let cols_to_skip = (1.0 / self.h_ratio()).round() as u16;
-        if cols_to_skip < self.leftmost_col {
-            self.leftmost_col -= cols_to_skip;
-        } else {
-            self.leftmost_col = 0;
-        }
+    pub fn scroll_zoombox_one_line_down(&mut self, count: u16) {
+        self.top_line = min(
+            self.top_line + (count as f64 / self.v_ratio()).round() as u16,
+            self.max_top_line());
+    }
+
+    pub fn scroll_zoombox_one_col_right(&mut self, count: u16) {
+        self.leftmost_col = min(
+            self.leftmost_col + (count as f64 / self.h_ratio()).round() as u16,
+            self.max_leftmost_col());
     }
 
     pub fn jump_to_top(&mut self) {
