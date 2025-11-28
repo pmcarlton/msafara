@@ -157,14 +157,6 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
             }
         }
 
-        // Down
-        KeyCode::Char('j') => match ui.zoom_level() {
-            ZoomLevel::ZoomedIn => ui.scroll_one_line_down(count as u16),
-            ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_line_down(count as u16),
-        },
-        KeyCode::Char('J') | KeyCode::Char(' ') => ui.scroll_one_screen_down(count as u16),
-        KeyCode::Char('G') => ui.jump_to_bottom(),
-
         // Up
         KeyCode::Char('k') => match ui.zoom_level() {
             ZoomLevel::ZoomedIn => ui.scroll_one_line_up(count as u16),
@@ -172,6 +164,22 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         },
         KeyCode::Char('K') => ui.scroll_one_screen_up(count as u16),
         KeyCode::Char('g') => ui.jump_to_top(),
+
+        // Left
+        KeyCode::Char('h') => match ui.zoom_level() {
+            ZoomLevel::ZoomedIn => ui.scroll_one_col_left(count as u16),
+            ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_col_left(count as u16),
+        },
+        KeyCode::Char('H') => ui.scroll_one_screen_left(count as u16),
+        KeyCode::Char('^') => ui.jump_to_begin(),
+
+        // Down
+        KeyCode::Char('j') => match ui.zoom_level() {
+            ZoomLevel::ZoomedIn => ui.scroll_one_line_down(count as u16),
+            ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_line_down(count as u16),
+        },
+        KeyCode::Char('J') | KeyCode::Char(' ') => ui.scroll_one_screen_down(count as u16),
+        KeyCode::Char('G') => ui.jump_to_bottom(),
 
         // Right
         KeyCode::Char('l') => match ui.zoom_level() {
@@ -181,13 +189,10 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         KeyCode::Char('L') => ui.scroll_one_screen_right(count as u16),
         KeyCode::Char('$') => ui.jump_to_end(),
 
-        // Left
-        KeyCode::Char('h') => match ui.zoom_level() {
-            ZoomLevel::ZoomedIn => ui.scroll_one_col_left(count as u16),
-            ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => ui.scroll_zoombox_one_col_left(count as u16),
-        },
-        KeyCode::Char('H') => ui.scroll_one_screen_left(count as u16),
-        KeyCode::Char('^') => ui.jump_to_begin(),
+        // Absolute lines
+
+        // Visible line
+        KeyCode::Char('-') => ui.jump_to_line(count as u16),
 
         // Label Pane width
         // NOTE: for these methods I'm using a more general approach than for
