@@ -614,13 +614,13 @@ impl<'a> UI<'a> {
 
     pub fn scroll_zoombox_one_line_down(&mut self, count: u16) {
         self.top_line = min(
-            self.top_line + (count as f64 / self.v_ratio()).round() as u16,
+            self.top_line.saturating_add((count as f64 / self.v_ratio()).round() as u16),
             self.max_top_line());
     }
 
     pub fn scroll_zoombox_one_col_right(&mut self, count: u16) {
         self.leftmost_col = min(
-            self.leftmost_col + (count as f64 / self.h_ratio()).round() as u16,
+            self.leftmost_col.saturating_add((count as f64 / self.h_ratio()).round() as u16),
             self.max_leftmost_col());
     }
 
