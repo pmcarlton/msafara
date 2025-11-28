@@ -647,6 +647,10 @@ impl<'a> UI<'a> {
     pub fn jump_to_end(&mut self) {
         self.leftmost_col = self.max_leftmost_col()
     }
+    
+    pub fn jump_to_line(&mut self, line: u16) {
+        self.top_line = min(line, self.max_top_line());
+    }
 
     // ********************************************************
     // Modeline & messaging
