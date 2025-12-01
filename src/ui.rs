@@ -61,8 +61,16 @@ enum InputMode {
     Normal,
     Help,
     PendingCount { count: usize },
+    LabelSearch { pattern: String, direction: LabelSearchDirection },
     Search { pattern: String, direction: SearchDirection },
     // ExCommand { buffer: String },
+}
+
+#[derive(PartialEq)]
+#[allow(dead_code)]
+enum LabelSearchDirection {
+    Up,
+    Down,
 }
 
 #[derive(PartialEq)]

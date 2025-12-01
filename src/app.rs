@@ -6,6 +6,8 @@ use std::{
     fmt,
 };
 
+use regex::Regex;
+
 use crate::{
     alignment::Alignment,
     app::Metric::{PctIdWrtConsensus, SeqLen},
@@ -202,6 +204,16 @@ impl App {
             PctIdWrtConsensus => &self.alignment.id_wrt_consensus,
             SeqLen => &self.alignment.relative_seq_len,
         }
+    }
+
+    pub fn regex_search_labels(&self, re: Regex) -> Vec<usize> {
+        // actually numbers of matching lines, but a bit longish
+        let matches: Vec<usize> = self.alignment.headers
+            .iter()
+            .enumerate()
+            .filter_map(|(i,line)| re.is_match(line).then_some(i))
+            .collect();
+        matches
     }
 }
 

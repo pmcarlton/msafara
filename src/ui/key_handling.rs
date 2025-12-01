@@ -6,9 +6,12 @@ use log::debug;
 
 use crate::ui::{
     InputMode,
-    InputMode::{Help, Normal, PendingCount, Search},
+    InputMode::{Help, Normal, PendingCount, LabelSearch, Search},
+    LabelSearchDirection,
+    LabelSearchDirection::{Up, Down},
     SearchDirection,
 };
+
 use crate::{ZoomLevel, UI};
 
 pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
@@ -17,6 +20,7 @@ pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
         Normal => done = handle_normal_key(ui, key_event),
         Help => ui.input_mode = InputMode::Normal,
         PendingCount { count } => done = handle_pending_count_key(ui, key_event, *count),
+        LabelSearch { pattern, direction } => handle_label_search(ui, key_event, pattern, direction),
         Search { pattern, direction } => todo!(),
     };
     done
@@ -38,6 +42,10 @@ fn handle_normal_key(ui: &mut UI, key_event: KeyEvent) -> bool {
         KeyCode::Char('c') if key_event.modifiers.contains(KeyModifiers::CONTROL) => done = true,
         // TODO: search
         KeyCode::Char('?') => ui.input_mode = InputMode::Help,
+        KeyCode::Char('"') => ui.input_mode = InputMode::LabelSearch{
+            pattern: String::from(""),
+            direction: LabelSearchDirection::Down,
+        },
         // Anything else: dispatch corresponding command, without count
         _ => dispatch_command(ui, key_event, None),
     }
