@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// 
 // Copyright (c) 2025 Thomas Junier
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -20,7 +21,8 @@ pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
         Normal => done = handle_normal_key(ui, key_event),
         Help => ui.input_mode = InputMode::Normal,
         PendingCount { count } => done = handle_pending_count_key(ui, key_event, *count),
-        LabelSearch { pattern, direction } => handle_label_search(ui, key_event, pattern, direction),
+        // LabelSearch { pattern, direction } => handle_label_search(ui, key_event, pattern, *direction),
+        LabelSearch { pattern, direction } => todo!(),
         Search { pattern, direction } => todo!(),
     };
     done
@@ -75,6 +77,10 @@ fn handle_pending_count_key(ui: &mut UI, key_event: KeyEvent, count: usize) -> b
         }
     }
     done
+}
+
+fn handle_label_search(ui: &mut UI, key_event: KeyEvent, pattern: &str) {
+    todo!();
 }
 
 fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) {

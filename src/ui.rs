@@ -66,14 +66,14 @@ enum InputMode {
     // ExCommand { buffer: String },
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 #[allow(dead_code)]
 enum LabelSearchDirection {
     Up,
     Down,
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 #[allow(dead_code)]
 enum SearchDirection {
     Forward,
