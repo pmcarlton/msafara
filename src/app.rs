@@ -50,6 +50,25 @@ impl fmt::Display for Metric {
     }
 }
 
+struct SearchState {
+    pattern: String,
+    regex: Regex,
+    match_linenums: Vec<usize>,
+    current: usize,
+}
+
+enum MessageKind {
+    Info,
+    Warning,
+    Error,
+    Argument,
+}
+
+struct CurrentMessage {
+    message: String,
+    kind: MessageKind,
+}
+
 pub struct App {
     pub filename: String,
     pub alignment: Alignment,
@@ -62,11 +81,17 @@ pub struct App {
     // value for each sequence.
     pub ordering: Vec<usize>,
     user_ordering: Option<Vec<String>>,
+    search_state: Option<SearchState>,
+    current_msg: CurrentMessage,
 }
 
 impl App {
     pub fn new(path: &str, alignment: Alignment, usr_ord: Option<Vec<String>>) -> Self {
         let len = alignment.num_seq();
+        let cur_msg = CurrentMessage {
+            message: String::from(""),
+            kind: MessageKind::Info,
+        };
         App {
             filename: path.to_string(),
             alignment,
@@ -74,6 +99,8 @@ impl App {
             metric: PctIdWrtConsensus,
             ordering: (0..len).collect(),
             user_ordering: usr_ord,
+            search_state: None,
+            current_msg: cur_msg,
         }
     }
 
@@ -206,14 +233,36 @@ impl App {
         }
     }
 
-    pub fn regex_search_labels(&self, re: Regex) -> Vec<usize> {
-        // actually numbers of matching lines, but a bit longish
-        let matches: Vec<usize> = self.alignment.headers
-            .iter()
-            .enumerate()
-            .filter_map(|(i,line)| re.is_match(line).then_some(i))
-            .collect();
-        matches
+    pub fn regex_search_labels(&mut self, pattern: &str) {
+        let try_re = Regex::new(pattern);
+        match try_re {
+            Ok(re) => {
+                // actually numbers of matching lines, but a bit longish
+                let matches: Vec<usize> = self.alignment.headers
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i,line)| re.is_match(line).then_some(i))
+                    .collect();
+
+                self.search_state = Some(SearchState {
+                    pattern: String::from(pattern),
+                    regex: re,
+                    match_linenums: matches,
+                    current: 0
+                });
+            }
+            Err(e) => {
+                self.error_msg(format!("Malformed regex {}.", e));
+                self.search_state = None;
+            }
+        }
+    }
+
+    pub fn error_msg(&mut self, msg: impl Into<String>) {
+        self.current_msg = CurrentMessage {
+            message: msg.into(),
+            kind: MessageKind::Error,
+        };
     }
 }
 
@@ -249,4 +298,7 @@ mod tests {
             order(&vec![12.23, 34.89, 7.0, -23.2, 100.0]),
         );
     }
+
+    #[test]
+    fn test_regex_lbl_search_10() { todo!(); }
 }

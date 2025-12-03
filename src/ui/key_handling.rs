@@ -17,12 +17,12 @@ use crate::{ZoomLevel, UI};
 
 pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
     let mut done = false;
-    match &ui.input_mode {
+    let mode = ui.input_mode.clone();
+    match mode {
         Normal => done = handle_normal_key(ui, key_event),
         Help => ui.input_mode = InputMode::Normal,
-        PendingCount { count } => done = handle_pending_count_key(ui, key_event, *count),
-        // LabelSearch { pattern, direction } => handle_label_search(ui, key_event, pattern, *direction),
-        LabelSearch { pattern, direction } => todo!(),
+        PendingCount { count } => done = handle_pending_count_key(ui, key_event, count),
+        LabelSearch { pattern, direction } => handle_label_search(ui, key_event, &pattern, direction),
         Search { pattern, direction } => todo!(),
     };
     done
@@ -36,7 +36,7 @@ fn handle_normal_key(ui: &mut UI, key_event: KeyEvent) -> bool {
             let d = (c as u8 - b'0') as usize;
             ui.input_mode = InputMode::PendingCount { count: d };
             ui.clear_msg();
-            ui.add_count_digit(c);
+            ui.add_argument_char(c);
         }
         KeyCode::Esc => ui.clear_msg(),
         // Q, q, and Ctrl-C quit
@@ -44,9 +44,12 @@ fn handle_normal_key(ui: &mut UI, key_event: KeyEvent) -> bool {
         KeyCode::Char('c') if key_event.modifiers.contains(KeyModifiers::CONTROL) => done = true,
         // TODO: search
         KeyCode::Char('?') => ui.input_mode = InputMode::Help,
-        KeyCode::Char('"') => ui.input_mode = InputMode::LabelSearch{
-            pattern: String::from(""),
-            direction: LabelSearchDirection::Down,
+        KeyCode::Char('"') => {
+            ui.input_mode = InputMode::LabelSearch{
+                pattern: String::from(""),
+                direction: LabelSearchDirection::Down,
+            };
+            ui.argument_msg(String::from("Label search: "));
         },
         // Anything else: dispatch corresponding command, without count
         _ => dispatch_command(ui, key_event, None),
@@ -61,7 +64,7 @@ fn handle_pending_count_key(ui: &mut UI, key_event: KeyEvent, count: usize) -> b
             let d = (c as u8 - b'0') as usize; 
             let updated_count = count.saturating_mul(10).saturating_add(d);
             ui.input_mode = InputMode::PendingCount { count: updated_count };
-            ui.add_count_digit(c);
+            ui.add_argument_char(c);
         }
         // Q, q, and Ctrl-C quit
         KeyCode::Char('q') | KeyCode::Char('Q') => done = true,
@@ -79,8 +82,18 @@ fn handle_pending_count_key(ui: &mut UI, key_event: KeyEvent, count: usize) -> b
     done
 }
 
-fn handle_label_search(ui: &mut UI, key_event: KeyEvent, pattern: &str) {
-    todo!();
+fn handle_label_search(ui: &mut UI, key_event: KeyEvent, pattern: &str, direction: LabelSearchDirection) {
+    match key_event.code {
+        KeyCode::Esc => {
+            ui.input_mode = InputMode::Normal;
+            ui.clear_msg();
+        }
+        KeyCode::Char(c) if c.is_ascii_graphic() || ' ' == c => {
+            ui.add_argument_char(c);
+        }
+        //KeyCode::Enter => ui.app.searc
+        _ => {}
+    }
 }
 
 fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) {

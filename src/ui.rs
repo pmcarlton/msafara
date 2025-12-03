@@ -28,13 +28,13 @@ use crate::{
 pub const INFO_MSG_FG: Color = Color::White;
 pub const WARNING_MSG_FG: Color = Color::Black;
 pub const ERROR_MSG_FG: Color = Color::White;
-pub const COUNT_MSG_FG: Color = Color::White;
+pub const ARG_MSG_FG: Color = Color::White;
 pub const DEBUG_MSG_FG: Color = Color::Black;
 
 pub const INFO_MSG_BG: Color = Color::Black;
 pub const WARNING_MSG_BG: Color = Color::Yellow;
 pub const ERROR_MSG_BG: Color = Color::Red;
-pub const COUNT_MSG_BG: Color = Color::Blue;
+pub const ARG_MSG_BG: Color = Color::Blue;
 pub const DEBUG_MSG_BG: Color = Color::Cyan;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -56,7 +56,7 @@ enum VideoMode {
     Inverse,
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 enum InputMode {
     Normal,
     Help,
@@ -723,10 +723,16 @@ impl<'a> UI<'a> {
         self.message_bg = DEBUG_MSG_BG;
     }
 
-    pub fn add_count_digit(&mut self, digit: char) {
-        self.message.push(digit);
-        self.message_fg = COUNT_MSG_FG;
-        self.message_bg = COUNT_MSG_BG;
+    pub fn argument_msg(&mut self, msg: impl Into<String>) {
+        self.message = msg.into(); 
+        self.message_fg = ARG_MSG_FG;
+        self.message_bg = ARG_MSG_BG;
+    }
+
+    pub fn add_argument_char(&mut self, c: char) {
+        self.message.push(c);
+        self.message_fg = ARG_MSG_FG;
+        self.message_bg = ARG_MSG_BG;
     }
 
     // Debugging
