@@ -13,6 +13,7 @@ use crate::{
     ui::{
         barchart::{value_to_hbar, values_barchart},
         color_scheme::Theme,
+        msg_theme::style_for,
         AlnWRTSeqPane, BottomPanePosition, VideoMode, InputMode,
     },
     vec_f64_aux::{normalize, ones_complement, product},
@@ -873,8 +874,8 @@ fn render_bottom_pane(f: &mut Frame, bottom_chunk: Rect, ui: &UI) {
     let colormap = ui.color_scheme().current_residue_colormap();
     let btm_block = Block::default()
         .borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM)
-        .title_bottom(&*ui.message)
-        .title_style(Style::new().bold().fg(ui.message_fg).bg(ui.message_bg));
+        .title_bottom(&*ui.app.current_msg.message)
+        .title_style(style_for(&ui.app.current_msg.kind));
 
     let mut colored_consensus: Vec<Span> = ui
         .app
@@ -986,7 +987,7 @@ pub fn render_ui(f: &mut Frame, ui: &mut UI) {
     if ui.input_mode == InputMode::Help {
         render_help_dialog(f, layout_panes.dialog);
         // after the first display of the help dialog, remove the message
-        ui.clear_msg();
+        ui.app.clear_msg();
     }
 }
 

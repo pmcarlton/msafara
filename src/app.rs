@@ -57,16 +57,18 @@ struct SearchState {
     current: usize,
 }
 
-enum MessageKind {
+#[derive(Clone)]
+pub enum MessageKind {
     Info,
     Warning,
     Error,
     Argument,
 }
 
-struct CurrentMessage {
-    message: String,
-    kind: MessageKind,
+// Simple, 1-line message (possibly just "")
+pub struct CurrentMessage {
+    pub message: String,
+    pub kind: MessageKind,
 }
 
 pub struct App {
@@ -82,7 +84,7 @@ pub struct App {
     pub ordering: Vec<usize>,
     user_ordering: Option<Vec<String>>,
     search_state: Option<SearchState>,
-    current_msg: CurrentMessage,
+    pub current_msg: CurrentMessage,
 }
 
 impl App {
@@ -258,11 +260,44 @@ impl App {
         }
     }
 
+    pub fn clear_msg(&mut self) {
+        self.current_msg = CurrentMessage {
+            message: String::from(""),
+            kind: MessageKind::Info,
+        }
+    }
+
+    pub fn info_msg(&mut self, msg: impl Into<String>) {
+        self.current_msg = CurrentMessage {
+            message: msg.into(),
+            kind: MessageKind::Info,
+        };
+    }
+
+    pub fn warning_msg(&mut self, msg: impl Into<String>) {
+        self.current_msg = CurrentMessage {
+            message: msg.into(),
+            kind: MessageKind::Warning,
+        };
+    }
+
     pub fn error_msg(&mut self, msg: impl Into<String>) {
         self.current_msg = CurrentMessage {
             message: msg.into(),
             kind: MessageKind::Error,
         };
+    }
+
+    pub fn argument_msg(&mut self, msg: impl Into<String>) {
+        self.current_msg = CurrentMessage {
+            message: msg.into(),
+            kind: MessageKind::Argument,
+        };
+    }
+
+    pub fn add_argument_char(&mut self, c: char) {
+        self.current_msg.message.push(c);
+        self.current_msg.kind = MessageKind::Argument;
     }
 }
 

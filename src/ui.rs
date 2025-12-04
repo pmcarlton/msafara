@@ -5,6 +5,7 @@ pub mod color_map;
 mod color_scheme;
 pub mod key_handling;
 pub mod render;
+mod msg_theme;
 
 use std::{
         cmp::{min},
@@ -24,18 +25,6 @@ use crate::{
     App,
 };
 
-
-pub const INFO_MSG_FG: Color = Color::White;
-pub const WARNING_MSG_FG: Color = Color::Black;
-pub const ERROR_MSG_FG: Color = Color::White;
-pub const ARG_MSG_FG: Color = Color::White;
-pub const DEBUG_MSG_FG: Color = Color::Black;
-
-pub const INFO_MSG_BG: Color = Color::Black;
-pub const WARNING_MSG_BG: Color = Color::Yellow;
-pub const ERROR_MSG_BG: Color = Color::Red;
-pub const ARG_MSG_BG: Color = Color::Blue;
-pub const DEBUG_MSG_BG: Color = Color::Cyan;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ZoomLevel {
@@ -128,9 +117,6 @@ pub struct UI<'a> {
     aln_pane_size: Option<Size>,
     frame_size: Option<Size>, // whole app
     full_screen: bool,
-    message: String, // Simple, 1-line message (possibly just "", no need for Option IMHO)
-    message_fg: Color,
-    message_bg: Color,
     video_mode: VideoMode,
     input_mode: InputMode,
 }
@@ -138,6 +124,7 @@ pub struct UI<'a> {
 impl<'a> UI<'a> {
     pub fn new(app: &'a mut App) -> Self {
         let macromolecule_type = app.alignment.macromolecule_type();
+        app.info_msg("Press '?' for help");
         UI {
             app,
             color_schemes: vec![
@@ -161,9 +148,6 @@ impl<'a> UI<'a> {
             aln_pane_size: None,
             frame_size: None,
             full_screen: false,
-            message: " Press '?' for help ".into(),
-            message_fg: INFO_MSG_FG,
-            message_bg: INFO_MSG_BG,
             video_mode: VideoMode::Inverse,
             input_mode: InputMode::Normal,
         }
@@ -521,7 +505,7 @@ impl<'a> UI<'a> {
                     cs.add_colormap(cmap.clone());
                 }
             }
-            Err(_) => self.error_msg(format!( "Error reading colormap {}.", cmap_fname)),
+            Err(_) => self.app.error_msg(format!( "Error reading colormap {}.", cmap_fname)),
         }
     }
 
@@ -683,56 +667,6 @@ impl<'a> UI<'a> {
         let clamped_pct = min(100, pct);
         let tgt_col = (clamped_pct as f64 / 100.0 * self.app.aln_len() as f64).round() as u16;
         self.leftmost_col = tgt_col;
-    }
-
-
-
-    // ********************************************************
-    // Modeline & messaging
-    
-    pub fn clear_msg(&mut self) {
-        self.message = "".into();
-        // possibly not strictly needed:
-        self.message_fg = INFO_MSG_FG;
-        self.message_bg = INFO_MSG_BG;
-    }
-
-    #[allow(dead_code)]
-    pub fn info_msg(&mut self, msg: impl Into<String>) {
-        self.message = msg.into();
-        self.message_fg = INFO_MSG_FG;
-        self.message_bg = INFO_MSG_BG;
-    }
-
-    pub fn warning_msg(&mut self, msg: impl Into<String>) {
-        self.message = msg.into();
-        self.message_fg = WARNING_MSG_FG;
-        self.message_bg = WARNING_MSG_BG;
-    }
-
-    pub fn error_msg(&mut self, msg: impl Into<String>) {
-        self.message = msg.into();
-        self.message_fg = ERROR_MSG_FG;
-        self.message_bg = ERROR_MSG_BG;
-    }
-
-    #[allow(dead_code)]
-    pub fn debug_msg(&mut self, msg: impl Into<String>) {
-        self.message = msg.into();
-        self.message_fg = DEBUG_MSG_FG;
-        self.message_bg = DEBUG_MSG_BG;
-    }
-
-    pub fn argument_msg(&mut self, msg: impl Into<String>) {
-        self.message = msg.into(); 
-        self.message_fg = ARG_MSG_FG;
-        self.message_bg = ARG_MSG_BG;
-    }
-
-    pub fn add_argument_char(&mut self, c: char) {
-        self.message.push(c);
-        self.message_fg = ARG_MSG_FG;
-        self.message_bg = ARG_MSG_BG;
     }
 
     // Debugging

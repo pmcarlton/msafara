@@ -35,10 +35,10 @@ fn handle_normal_key(ui: &mut UI, key_event: KeyEvent) -> bool {
         KeyCode::Char(c) if c.is_ascii_digit() && c != '0' => {
             let d = (c as u8 - b'0') as usize;
             ui.input_mode = InputMode::PendingCount { count: d };
-            ui.clear_msg();
-            ui.add_argument_char(c);
+            ui.app.clear_msg();
+            ui.app.add_argument_char(c);
         }
-        KeyCode::Esc => ui.clear_msg(),
+        KeyCode::Esc => ui.app.clear_msg(),
         // Q, q, and Ctrl-C quit
         KeyCode::Char('q') | KeyCode::Char('Q') => done = true,
         KeyCode::Char('c') if key_event.modifiers.contains(KeyModifiers::CONTROL) => done = true,
@@ -49,7 +49,7 @@ fn handle_normal_key(ui: &mut UI, key_event: KeyEvent) -> bool {
                 pattern: String::from(""),
                 direction: LabelSearchDirection::Down,
             };
-            ui.argument_msg(String::from("Label search: "));
+            ui.app.argument_msg(String::from("Label search: "));
         },
         // Anything else: dispatch corresponding command, without count
         _ => dispatch_command(ui, key_event, None),
@@ -64,18 +64,18 @@ fn handle_pending_count_key(ui: &mut UI, key_event: KeyEvent, count: usize) -> b
             let d = (c as u8 - b'0') as usize; 
             let updated_count = count.saturating_mul(10).saturating_add(d);
             ui.input_mode = InputMode::PendingCount { count: updated_count };
-            ui.add_argument_char(c);
+            ui.app.add_argument_char(c);
         }
         // Q, q, and Ctrl-C quit
         KeyCode::Char('q') | KeyCode::Char('Q') => done = true,
         KeyCode::Char('c') if key_event.modifiers.contains(KeyModifiers::CONTROL) => done = true,
         KeyCode::Esc => {
             ui.input_mode = InputMode::Normal;
-            ui.clear_msg();
+            ui.app.clear_msg();
         }
         _ => {
             ui.input_mode = InputMode::Normal;
-            ui.clear_msg();
+            ui.app.clear_msg();
             dispatch_command(ui, key_event, Some(count));
         }
     }
@@ -86,10 +86,10 @@ fn handle_label_search(ui: &mut UI, key_event: KeyEvent, pattern: &str, directio
     match key_event.code {
         KeyCode::Esc => {
             ui.input_mode = InputMode::Normal;
-            ui.clear_msg();
+            ui.app.clear_msg();
         }
         KeyCode::Char(c) if c.is_ascii_graphic() || ' ' == c => {
-            ui.add_argument_char(c);
+            ui.app.add_argument_char(c);
         }
         //KeyCode::Enter => ui.app.searc
         _ => {}
@@ -289,15 +289,15 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         KeyCode::Char('T') => ui.app.prev_metric(),
 
         // ----- Search -----
-        KeyCode::Char('/') => ui.warning_msg("Search not implemented yet"),
-        KeyCode::Char('?') => ui.warning_msg("Search not implemented yet"),
-        KeyCode::Char(']') => ui.warning_msg("Search not implemented yet"),
-        KeyCode::Char('[') => ui.warning_msg("Search not implemented yet"),
+        KeyCode::Char('/') => ui.app.warning_msg("Search not implemented yet"),
+        KeyCode::Char('?') => ui.app.warning_msg("Search not implemented yet"),
+        KeyCode::Char(']') => ui.app.warning_msg("Search not implemented yet"),
+        KeyCode::Char('[') => ui.app.warning_msg("Search not implemented yet"),
 
         // ----- Editing -----
         // Filter alignment through external command (à la Vim's '!')
-        KeyCode::Char('!') => ui.warning_msg("Filtering not implemented yet"),
-        KeyCode::Char(':') => ui.warning_msg("Ex mode not implemented yet"),
+        KeyCode::Char('!') => ui.app.warning_msg("Filtering not implemented yet"),
+        KeyCode::Char(':') => ui.app.warning_msg("Ex mode not implemented yet"),
 
 
         _ => {
