@@ -90,8 +90,29 @@ fn handle_label_search(ui: &mut UI, key_event: KeyEvent, pattern: &str, directio
         }
         KeyCode::Char(c) if c.is_ascii_graphic() || ' ' == c => {
             ui.app.add_argument_char(c);
+            let mut updated_pattern = pattern.to_string();
+            updated_pattern.push(c);
+            ui.input_mode = InputMode::LabelSearch { 
+                pattern: updated_pattern,
+                direction: direction,
+            }
         }
-        //KeyCode::Enter => ui.app.searc
+        KeyCode::Delete => {
+            let mut updated_pattern = pattern.to_string()
+            updated_pattern.pop();
+            ui.input_mode = InputMode::LabelSearch { 
+                pattern: updated_pattern,
+                direction: direction,
+            }
+        }
+        KeyCode::Enter => {
+            ui.app.regex_search_labels(pattern);
+            ui.input_mode = InputMode::Normal;
+            if let Some(srch_st) = &ui.app.search_state {
+                let first_match_linenum = srch_st.match_linenums[0];
+                ui.jump_to_line(first_match_linenum.saturating_add(1) as u16); // +1 -> user is 1-based
+            }
+        }
         _ => {}
     }
 }
@@ -229,6 +250,9 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         // Horizontal
         KeyCode::Char('#') => ui.jump_to_pct_col(count as u16),
 
+        // To search matches
+        KeyCode::Char('n') => ui.jump_to_next_lbl_match(count as u16),
+
         // Label Pane width
         // NOTE: for these methods I'm using a more general approach than for
         // motion: pass the argument instead of having separate functions for
@@ -255,6 +279,8 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
 
         // Bottom pane position (i.e., bottom of screen or stuck to the alignment - when both
         // are possible).
+        // TODO: not sure we're keeping the "bottom" position. Seems much better to stick it to the
+        // last seq in the alignment.
         KeyCode::Char('b') => {
             ui.cycle_bottom_pane_position();
             debug!(

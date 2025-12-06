@@ -50,11 +50,11 @@ impl fmt::Display for Metric {
     }
 }
 
-struct SearchState {
-    pattern: String,
+pub struct SearchState {
+    pub pattern: String,
     regex: Regex,
-    match_linenums: Vec<usize>,
-    current: usize,
+    pub match_linenums: Vec<usize>,
+    pub current: usize,
 }
 
 #[derive(Clone)]
@@ -62,6 +62,7 @@ pub enum MessageKind {
     Info,
     Warning,
     Error,
+    Debug,
     Argument,
 }
 
@@ -83,7 +84,7 @@ pub struct App {
     // value for each sequence.
     pub ordering: Vec<usize>,
     user_ordering: Option<Vec<String>>,
-    search_state: Option<SearchState>,
+    pub search_state: Option<SearchState>,
     pub current_msg: CurrentMessage,
 }
 
@@ -236,6 +237,7 @@ impl App {
     }
 
     pub fn regex_search_labels(&mut self, pattern: &str) {
+        self.debug_msg("Regex search");
         let try_re = Regex::new(pattern);
         match try_re {
             Ok(re) => {
@@ -245,7 +247,7 @@ impl App {
                     .enumerate()
                     .filter_map(|(i,line)| re.is_match(line).then_some(i))
                     .collect();
-
+                
                 self.search_state = Some(SearchState {
                     pattern: String::from(pattern),
                     regex: re,
@@ -285,6 +287,13 @@ impl App {
         self.current_msg = CurrentMessage {
             message: msg.into(),
             kind: MessageKind::Error,
+        };
+    }
+
+    pub fn debug_msg(&mut self, msg: impl Into<String>) {
+        self.current_msg = CurrentMessage {
+            message: msg.into(),
+            kind: MessageKind::Debug,
         };
     }
 

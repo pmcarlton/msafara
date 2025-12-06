@@ -13,6 +13,10 @@ pub const ERROR_STYLE: Style = Style::new()
     .fg(Color::White)
     .bg(Color::Red);
 
+pub const DEBUG_STYLE: Style = Style::new()
+    .fg(Color::Black)
+    .bg(Color::Cyan);
+
 pub const ARGUMENT_STYLE: Style = Style::new()
     .fg(Color::White)
     .bg(Color::Blue);
@@ -22,6 +26,7 @@ pub fn style_for(kind: &MessageKind) -> Style {
         MessageKind::Info => INFO_STYLE,
         MessageKind::Warning => WARNING_STYLE,
         MessageKind::Error => ERROR_STYLE,
+        MessageKind::Debug => DEBUG_STYLE,
         MessageKind::Argument => ARGUMENT_STYLE,
     }
 }
