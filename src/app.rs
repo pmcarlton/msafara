@@ -268,7 +268,11 @@ impl App {
 
     pub fn current_label_match_linenum(&self) -> Option<usize> {
         if let Some(state) = &self.search_state {
-            Some(state.match_linenums[state.current])
+            if state.match_linenums.len() > 0 {
+                Some(state.match_linenums[state.current])
+            } else {
+                None
+            }
         } else {
             None
         }
@@ -278,8 +282,12 @@ impl App {
         match &self.search_state {
             Some(state) => {
                 let nb_matches = state.match_linenums.len();
-                let new = (state.current + count) % nb_matches;
-                self.search_state.as_mut().unwrap().current = new;
+                if nb_matches > 0 {
+                    let new = (state.current + count) % nb_matches;
+                    self.search_state.as_mut().unwrap().current = new;
+                } else {
+                    self.warning_msg("No match.");
+                }
             }
             None => {
                 self.warning_msg("No current search.");
