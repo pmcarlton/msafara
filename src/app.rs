@@ -68,6 +68,7 @@ pub enum MessageKind {
 
 // Simple, 1-line message (possibly just "")
 pub struct CurrentMessage {
+    pub prefix: String,
     pub message: String,
     pub kind: MessageKind,
 }
@@ -92,6 +93,7 @@ impl App {
     pub fn new(path: &str, alignment: Alignment, usr_ord: Option<Vec<String>>) -> Self {
         let len = alignment.num_seq();
         let cur_msg = CurrentMessage {
+            prefix: String::from(""),
             message: String::from(""),
             kind: MessageKind::Info,
         };
@@ -289,6 +291,7 @@ impl App {
 
     pub fn clear_msg(&mut self) {
         self.current_msg = CurrentMessage {
+            prefix: String::from(""),
             message: String::from(""),
             kind: MessageKind::Info,
         }
@@ -296,6 +299,7 @@ impl App {
 
     pub fn info_msg(&mut self, msg: impl Into<String>) {
         self.current_msg = CurrentMessage {
+            prefix: String::from(""),
             message: msg.into(),
             kind: MessageKind::Info,
         };
@@ -303,6 +307,7 @@ impl App {
 
     pub fn warning_msg(&mut self, msg: impl Into<String>) {
         self.current_msg = CurrentMessage {
+            prefix: String::from("WARNING: "),
             message: msg.into(),
             kind: MessageKind::Warning,
         };
@@ -310,6 +315,7 @@ impl App {
 
     pub fn error_msg(&mut self, msg: impl Into<String>) {
         self.current_msg = CurrentMessage {
+            prefix: String::from("ERROR: "),
             message: msg.into(),
             kind: MessageKind::Error,
         };
@@ -317,13 +323,15 @@ impl App {
 
     pub fn debug_msg(&mut self, msg: impl Into<String>) {
         self.current_msg = CurrentMessage {
+            prefix: String::from(""),
             message: msg.into(),
             kind: MessageKind::Debug,
         };
     }
 
-    pub fn argument_msg(&mut self, msg: impl Into<String>) {
+    pub fn argument_msg(&mut self, pfx: impl Into<String>, msg: impl Into<String>) {
         self.current_msg = CurrentMessage {
+            prefix: pfx.into(),
             message: msg.into(),
             kind: MessageKind::Argument,
         };
@@ -331,6 +339,11 @@ impl App {
 
     pub fn add_argument_char(&mut self, c: char) {
         self.current_msg.message.push(c);
+        self.current_msg.kind = MessageKind::Argument;
+    }
+
+    pub fn pop_argument_char(&mut self) {
+        self.current_msg.message.pop();
         self.current_msg.kind = MessageKind::Argument;
     }
 }

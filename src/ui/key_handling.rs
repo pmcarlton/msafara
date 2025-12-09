@@ -49,7 +49,7 @@ fn handle_normal_key(ui: &mut UI, key_event: KeyEvent) -> bool {
                 pattern: String::from(""),
                 direction: LabelSearchDirection::Down,
             };
-            ui.app.argument_msg(String::from("Label search: "));
+            ui.app.argument_msg(String::from("Label search: "), String::from(""));
         },
         // Anything else: dispatch corresponding command, without count
         _ => dispatch_command(ui, key_event, None),
@@ -97,13 +97,14 @@ fn handle_label_search(ui: &mut UI, key_event: KeyEvent, pattern: &str, directio
                 direction: direction,
             }
         }
-        KeyCode::Delete => {
+        KeyCode::Delete | KeyCode::Backspace  => {
+            ui.app.pop_argument_char();
             let mut updated_pattern = pattern.to_string();
             updated_pattern.pop();
             ui.input_mode = InputMode::LabelSearch { 
                 pattern: updated_pattern,
                 direction: direction,
-            }
+            };
         }
         KeyCode::Enter => {
             ui.app.regex_search_labels(pattern);

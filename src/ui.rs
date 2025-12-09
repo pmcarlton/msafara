@@ -669,8 +669,9 @@ impl<'a> UI<'a> {
         if let Some(state) = &self.app.search_state  {
             // We know there is a state, so from now on we can unwrap.
             self.app.increment_current_lbl_match(count as usize);
-            self.app.info_msg(format!("match #{}",
-                    self.app.search_state.as_ref().unwrap().current));
+            self.app.info_msg(format!("match #{}/{}",
+                    self.app.search_state.as_ref().unwrap().current,
+                    self.app.search_state.as_ref().unwrap().match_linenums.len()));
             let next_match_line = self.app.current_label_match_linenum();
             self.jump_to_line(next_match_line.unwrap() as u16);
         } else {
