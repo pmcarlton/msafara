@@ -667,13 +667,23 @@ impl<'a> UI<'a> {
 
     pub fn jump_to_next_lbl_match(&mut self, count: u16) {
         if let Some(state) = &self.app.search_state  {
-            // We know there is a state, so from now on we can unwrap.
-            self.app.increment_current_lbl_match(count as usize);
-            self.app.info_msg(format!("match #{}/{}",
-                    self.app.search_state.as_ref().unwrap().current,
-                    self.app.search_state.as_ref().unwrap().match_linenums.len()));
-            let next_match_line = self.app.current_label_match_linenum();
-            self.jump_to_line(next_match_line.unwrap() as u16);
+            // We know there was a search, so from now on we can unwrap `state`. But there still
+            // may be 0 matches.
+            let num_matches = self.app.search_state
+                .as_ref()
+                .unwrap()
+                .match_linenums
+                .len();
+            if num_matches > 0 {
+                self.app.increment_current_lbl_match(count as usize);
+                self.app.info_msg(format!("match #{}/{}",
+                        self.app.search_state.as_ref().unwrap().current + 1, // +1 <- user is 1-based
+                        self.app.search_state.as_ref().unwrap().match_linenums.len()));
+                let next_match_line = self.app.current_label_match_linenum();
+                self.jump_to_line(next_match_line.unwrap() as u16);
+            } else {
+                self.app.info_msg("No matches.");
+            }
         } else {
             // Warning message is set in App - nothing to do here.
         }
