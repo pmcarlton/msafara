@@ -55,6 +55,17 @@ TODO
 Urgent
 ------
 
+1. [ ] Shift-J and Shift-K in Zoomed-Out modes with very tall alignments move
+   the ZB by less than one line at a time, instead of a whole ZB - this is
+   normal, because the alignment is so tall that the number of lines displayed
+   in zoomed-in mode translates to _less than a line_ in zoomed-out modes.
+   This is a bit counterintuitive, however, because moving by lines now moves
+   _faster_ than moving by screenfuls. I think the best way forward is to make
+   this clear in the manual. 
+   To reproduce: termal data/OX_OFA_matches.msa. The same can happen for columns
+   in very wide alignments, of course. Note that for the same reason, the
+   scrollbars may stay in place even when the display moves by a screenful.
+
 Normal
 ------
 
