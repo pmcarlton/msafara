@@ -258,8 +258,8 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         // NOTE: for these methods I'm using a more general approach than for
         // motion: pass the argument instead of having separate functions for
         // each increment.
-        KeyCode::Char('>') => ui.widen_label_pane(1),
-        KeyCode::Char('<') => ui.reduce_label_pane(1),
+        KeyCode::Char('>') => ui.widen_label_pane(count as u16),
+        KeyCode::Char('<') => ui.reduce_label_pane(count as u16),
 
         // Zoom
         KeyCode::Char('z') => ui.cycle_zoom(),

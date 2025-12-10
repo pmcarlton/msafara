@@ -236,11 +236,17 @@ impl<'a> UI<'a> {
 
     pub fn widen_label_pane(&mut self, amount: u16) {
         // TODO: heed the border width (not sure if we'll keep them)
+        self.label_pane_width = min(
+            self.label_pane_width + amount,
+            self.frame_size.unwrap().width
+        );
+        /*
         self.label_pane_width = if self.label_pane_width + amount < self.frame_size.unwrap().width {
             self.label_pane_width + amount
         } else {
             self.frame_size.unwrap().width
         }
+        */
     }
 
     pub fn reduce_label_pane(&mut self, amount: u16) {

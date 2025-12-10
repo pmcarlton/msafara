@@ -66,6 +66,11 @@ Urgent
    in very wide alignments, of course. Note that for the same reason, the
    scrollbars may stay in place even when the display moves by a screenful.
 
+1. [ ] B0021 Pressing '<' repeatedly can obscure the numbers pane.
+
+1. [ ] B0020 Pressing repeatedly '>' eventually causes a crash when the label
+   pane exceeds the width of the sequence pane.
+
 Normal
 ------
 
