@@ -15,6 +15,7 @@ use crate::{
         color_scheme::Theme,
         msg_theme::style_for,
         AlnWRTSeqPane, BottomPanePosition, VideoMode, InputMode,
+        V_SCROLLBAR_WIDTH, MIN_COLS_SHOWN, BORDER_WIDTH,
     },
     vec_f64_aux::{normalize, ones_complement, product},
     ZoomLevel, UI,
@@ -573,9 +574,11 @@ fn make_layout(f: &Frame, ui: &UI) -> Panes {
     };
     let v_panes = Layout::new(Direction::Vertical, constraints).split(f.area());
 
+    let min_seq_pane_width = V_SCROLLBAR_WIDTH +
+        MIN_COLS_SHOWN + BORDER_WIDTH;
     let upper_panes = Layout::new(
         Direction::Horizontal,
-        vec![Constraint::Max(ui.label_pane_width), Constraint::Fill(1)],
+        vec![Constraint::Max(ui.label_pane_width), Constraint::Min(min_seq_pane_width)],
     )
     .split(v_panes[0]);
     // number of columns for the label number pane :-)
@@ -593,7 +596,7 @@ fn make_layout(f: &Frame, ui: &UI) -> Panes {
     .split(upper_panes[0]);
     let lower_panes = Layout::new(
         Direction::Horizontal,
-        vec![Constraint::Max(ui.label_pane_width), Constraint::Fill(1)],
+        vec![Constraint::Max(ui.label_pane_width), Constraint::Fill(min_seq_pane_width)],
     )
     .split(v_panes[1]);
 

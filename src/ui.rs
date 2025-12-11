@@ -26,6 +26,10 @@ use crate::{
 };
 
 
+const V_SCROLLBAR_WIDTH: u16 = 1;
+const MIN_COLS_SHOWN: u16 = 1;
+const BORDER_WIDTH: u16 = 1;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ZoomLevel {
     ZoomedIn,
@@ -247,11 +251,17 @@ impl<'a> UI<'a> {
     }
 
     pub fn widen_label_pane(&mut self, amount: u16) {
-        // TODO: heed the border width (not sure if we'll keep them)
         self.label_pane_width = min(
             self.label_pane_width + amount,
-            self.frame_size.unwrap().width
+            self.frame_size.unwrap().width -
+            (V_SCROLLBAR_WIDTH + MIN_COLS_SHOWN + BORDER_WIDTH + 
+             self.seq_num_pane_width() + self.metric_pane_width())
         );
+        self.app.debug_msg(format!("Fw: {}; NPw: {}, LPw: {}",
+                self.frame_size.unwrap().width,
+                self.seq_num_pane_width(),
+                self.label_pane_width,
+                ));
         /*
         self.label_pane_width = if self.label_pane_width + amount < self.frame_size.unwrap().width {
             self.label_pane_width + amount
