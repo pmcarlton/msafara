@@ -927,13 +927,22 @@ fn render_bottom_pane(f: &mut Frame, bottom_chunk: Rect, ui: &UI) {
 }
 
 fn render_modeline(f: &mut Frame, ui: &mut UI) {
+    if ui.app.current_msg.message.is_empty() { return; }
+
+    // without '└ ', the modeline would start in the very bottom left.
+    let corner_span = Span::raw("└ ");
+    let message_span = Span::styled(format!("{}{}",
+                &*ui.app.current_msg.prefix,
+                &*ui.app.current_msg.message),
+            style_for(&ui.app.current_msg.kind)
+        );
+    let spacer_span = Span::raw(" ");
+    let modeline = Line::from(vec![corner_span,
+        message_span, spacer_span]);
     let modeline_block = Block::default()
         .borders(Borders::NONE)
-        .title_bottom(format!("{}{}",
-                &*ui.app.current_msg.prefix,
-                &*ui.app.current_msg.message))
-        .title_style(style_for(&ui.app.current_msg.kind));
-    f.render_widget(modeline_block, f.size());
+        .title_bottom(modeline);
+    f.render_widget(modeline_block, f.area());
 }
 
 fn render_help_dialog(f: &mut Frame, dialog_chunk: Rect) {
@@ -983,7 +992,7 @@ pub fn render_ui(f: &mut Frame, ui: &mut UI) {
     ui.frame_size = Some(f.area().as_size());
 
     ui.assert_invariants();
-    ui.width_debug_msg();
+    // ui.width_debug_msg();
 
     /* Render panes */
     render_label_nums_pane(f, layout_panes.lbl_num, ui);

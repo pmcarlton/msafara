@@ -254,8 +254,7 @@ impl<'a> UI<'a> {
         self.left_pane_width = min(
             self.left_pane_width + amount,
             self.frame_size.unwrap().width -
-            (V_SCROLLBAR_WIDTH + MIN_COLS_SHOWN + BORDER_WIDTH + 
-             self.seq_num_pane_width() + self.metric_pane_width())
+            (V_SCROLLBAR_WIDTH + MIN_COLS_SHOWN + BORDER_WIDTH)
         );
         /*
         self.left_pane_width = if self.left_pane_width + amount < self.frame_size.unwrap().width {
@@ -727,9 +726,10 @@ impl<'a> UI<'a> {
     }
 
     pub fn width_debug_msg(&mut self) {
-        self.app.debug_msg(format!("Fw: {}; LPw: {}, SPw: {} (S={})",
+        self.app.debug_msg(format!("Fw: {}; LPw: {} ({}+), SPw: {} (S={})",
                 self.frame_size.unwrap().width,
                 self.left_pane_width,
+                self.seq_num_pane_width(),
                 self.aln_pane_size.unwrap().width,
                 self.left_pane_width + self.aln_pane_size.unwrap().width,
                 ));
