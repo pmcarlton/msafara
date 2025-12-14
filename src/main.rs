@@ -173,7 +173,7 @@ fn main() -> Result<(), TermalError> {
             SeqFileFormat::FastA => read_fasta_file(seq_filename)?,
             SeqFileFormat::Stockholm => read_stockholm_file(seq_filename)?,
         };
-        let alignment = Alignment::new(seq_file);
+        let alignment = Alignment::from_file(seq_file);
         let mut ordering_err_msg: Option<String> = None;
         let mut user_ordering = match cli.user_order {
             Some(fname) => {
@@ -204,7 +204,7 @@ fn main() -> Result<(), TermalError> {
                 user_ordering = None;
             }
         };
-        let mut app = App::new(seq_filename, alignment,
+        let mut app = App::from_file(seq_filename, alignment,
             user_ordering);
         if let Some(msg) = ordering_err_msg {
             app.error_msg(msg);

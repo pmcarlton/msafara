@@ -91,7 +91,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(path: &str, alignment: Alignment, usr_ord: Option<Vec<String>>) -> Self {
+    pub fn from_file(path: &str, alignment: Alignment, usr_ord: Option<Vec<String>>) -> Self {
         let len = alignment.num_seq();
         let cur_msg = CurrentMessage {
             prefix: String::from(""),
