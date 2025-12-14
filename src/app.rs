@@ -84,6 +84,7 @@ pub struct App {
     // according to the current metric, in which case the ordering becomes that of the metric's
     // value for each sequence.
     pub ordering: Vec<usize>,
+    pub reverse_ordering: Vec<usize>,
     user_ordering: Option<Vec<String>>,
     pub search_state: Option<SearchState>,
     current_msg: CurrentMessage,
@@ -103,6 +104,7 @@ impl App {
             ordering_criterion: SourceFile,
             metric: PctIdWrtConsensus,
             ordering: (0..len).collect(),
+            reverse_ordering: (0..len).collect(),
             user_ordering: usr_ord,
             search_state: None,
             current_msg: cur_msg,
@@ -153,7 +155,7 @@ impl App {
                         }
                         // Iterate over ordering, looking up file index from the above hash.
                         let mut result: Vec<usize> = Vec::new();
-                        // TODO: now that we no check for discrepancies here, this should be
+                        // TODO: now that we no longer check for discrepancies here, this should be
                         //feasible in a sinmple map.
                         for hdr in uord_vec.iter() {
                             match hdr2rank.get(hdr) {
@@ -167,6 +169,7 @@ impl App {
                 }
             }
         }
+        self.reverse_ordering = order(&self.ordering);
     }
 
     pub fn next_ordering_criterion(&mut self) {
@@ -266,10 +269,10 @@ impl App {
         }
     }
 
-    pub fn current_label_match_linenum(&self) -> Option<usize> {
+    pub fn current_label_match_screenlinenum(&self) -> Option<usize> {
         if let Some(state) = &self.search_state {
             if state.match_linenums.len() > 0 {
-                Some(state.match_linenums[state.current])
+                Some(self.reverse_ordering[state.match_linenums[state.current]])
             } else {
                 None
             }
@@ -368,11 +371,11 @@ impl App {
 // Computes an ordering WRT an array, that is, an array of indices of elements of the source array,
 // after sorting. Eg [3, -2, 7] -> [1, 0, 2], because the smalllest element has index 1, the next
 // has index 0, and the largest has index 2 (in the original array).
-fn order(nums: &Vec<f64>) -> Vec<usize> {
-    // let result: Vec<usize> = Vec::with_capacity(nums.len());
-    let init_order: Vec<usize> = (0..nums.len()).collect();
-    let zip_iter = init_order.iter().zip(nums);
-    let mut unsorted_pairs: Vec<(&usize, &f64)> = zip_iter.collect();
+fn order<T: PartialOrd>(elems: &[T]) -> Vec<usize> {
+    // let result: Vec<usize> = Vec::with_capacity(elems.len());
+    let init_order: Vec<usize> = (0..elems.len()).collect();
+    let zip_iter = init_order.iter().zip(elems);
+    let mut unsorted_pairs: Vec<(&usize, &T)> = zip_iter.collect();
     unsorted_pairs.sort_by(|(_, t1), (_, t2)| t1.partial_cmp(t2).expect("Unorder!"));
     unsorted_pairs
         .into_iter()
@@ -399,5 +402,27 @@ mod tests {
     }
 
     #[test]
+    fn test_order_10() {
+        // Reverse order
+        let orig = vec![3.0, 2.0, 5.0, 1.0, 4.0];
+        let direct_order = order(&orig);
+        assert_eq!(vec![3, 1, 0, 4, 2], direct_order);
+        let reverse_order = order(&direct_order);
+        assert_eq!(vec![2, 1, 4, 0, 3], reverse_order);
+    }
+
+    #[test]
+    fn test_rank2screenline_00() {
+        todo!();
+    }
+
+
+    #[test]
     fn test_regex_lbl_search_10() { todo!(); }
+
+    #[test]
+    // TODO: change the c'tor so that we can build Apps from literals instead of having to open an
+    // alignment file.
+    // Then make some simple apps and test the App methods on them.
+    fn test_create_app_00() { todo!(); }
 }

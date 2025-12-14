@@ -1,0 +1,40 @@
+>Rk_01 Vipera berus
+gctagctagctagctcaga
+>Rk_02 Malpolon monspessulanus
+-ctagctagctagctcaga
+>Rk_03 Vipera aspis
+--tagctagctagctcaga
+>Rk_04 Dendroaspis polylepis
+---agctagctagctcaga
+>Rk_05 Dendroaspis angusticeps
+----gctagctagctcaga
+>Rk_06 Ancanthophis antarcticus
+-----ctagctagctcaga
+>Rk_07 Ophiophagus hannah
+------tagctagctcaga
+>Rk_08 Vipera orsinii
+------tagctagctcaga
+>Rk_09 Dendroaspis viridis
+-------agctagctcaga
+>Rk_10 Bungarus caeruleus
+--------gctagctcaga
+>Rk_11 Bungarus fasciatus
+---------ctagctcaga
+>Rk_12 Naja naja
+----------tagctcaga
+>Rk_13 Naja haje
+-----------agctcaga
+>Rk_14 Naja oxiana
+------------gctcaga
+>Rk_15 Oxyuranus microlepidotus
+-------------ctcaga
+>Rk_16 Echis carinatus
+---------------caga
+>Rk_17 Daboia russelli
+----------------aga
+>Rk_18 Vipera ammodytes
+-----------------ga
+>Rk_19 Crotalus atrox
+------------------a
+>Rk_20 Agkistrodon piscivorus
+-------------------
