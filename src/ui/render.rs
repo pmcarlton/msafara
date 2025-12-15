@@ -114,11 +114,16 @@ fn zoom_in_lbl_text<'a>(ui: &UI) -> Vec<Line<'a>> {
         .ordering
         .iter()
         .map(|i| {
-            Line::from(Span::raw(
-                // TODO: this clne should be avoidable, since Span takes a Cow. This would of
-                // course entail some lifetime wrangling.
+            let hl_style = if ui.app.is_label_search_match(*i) {
+                Style::default().add_modifier(Modifier::REVERSED)
+            } else {
+                Style::default()
+            };
+            let span = Span::styled(
                 ui.app.alignment.headers[*i].clone(),
-            ))
+                hl_style
+            );
+            Line::from(span)
         })
         .collect()
 }
@@ -127,8 +132,14 @@ fn zoom_out_lbl_text<'a>(ui: &UI) -> Vec<Line<'a>> {
     let mut ztext: Vec<Line> = Vec::new();
 
     for i in retained_seq_ndx(ui) {
-        ztext.push(Line::from(
+        let hl_style = if ui.app.is_label_search_match(i) {
+            Style::default().add_modifier(Modifier::REVERSED)
+        } else {
+            Style::default()
+        };
+        ztext.push(Line::from(Span::styled(
             ui.app.alignment.headers[ui.app.ordering[i]].clone(),
+            hl_style)
         ));
     }
 
@@ -721,7 +732,6 @@ fn render_label_nums_pane(f: &mut Frame, num_chunk: Rect, ui: &UI) {
 }
 
 fn render_labels_pane(f: &mut Frame, seq_chunk: Rect, ui: &UI) {
-    /* Labels pane */
     let labels = compute_labels_pane_text(ui);
     let lbl_block = Block::default().borders(Borders::TOP | Borders::LEFT | Borders::BOTTOM);
     let top_lbl_line = match ui.zoom_level() {

@@ -53,8 +53,13 @@ impl fmt::Display for Metric {
 pub struct SearchState {
     pub pattern: String,
     regex: Regex,
+    // Only the matching linenums; used for jumping to next match on screen. As many elements as
+    // there are _matches_.
     pub match_linenums: Vec<usize>,
     pub current: usize,
+    // Whether a header matches or not; used when iterating over all headers and determining
+    // whether to highlight or not. As many elements as there are sequences (and hence headers) in the alignment.
+    hdr_match_status: Vec<bool>,
 }
 
 #[derive(Clone)]
@@ -262,11 +267,16 @@ impl App {
                     .filter_map(|(i,line)| re.is_match(line).then_some(i))
                     .collect();
                 
+                // Start with all false, and flip to true only for matching lines
+                let mut match_linenum_vec: Vec<bool> = vec![false; self.alignment.num_seq()];
+                for i in &matches { match_linenum_vec[*i] = true; }
+
                 self.search_state = Some(SearchState {
                     pattern: String::from(pattern),
                     regex: re,
                     match_linenums: matches,
-                    current: 0
+                    current: 0,
+                    hdr_match_status: match_linenum_vec,
                 });
             }
             Err(e) => {
@@ -307,6 +317,16 @@ impl App {
             None => {
                 self.info_msg("No current search.");
             }
+        }
+    }
+
+    // Returns true IFF there is a search result AND header of rank `rank` (i.e., without
+    // correction for order) is a match. 
+    pub fn is_label_search_match(&self, rank: usize) -> bool {
+        if let Some(state) = &self.search_state {
+            state.hdr_match_status[rank]
+        } else {
+            false
         }
     }
 
