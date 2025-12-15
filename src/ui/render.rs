@@ -132,7 +132,7 @@ fn zoom_out_lbl_text<'a>(ui: &UI) -> Vec<Line<'a>> {
     let mut ztext: Vec<Line> = Vec::new();
 
     for i in retained_seq_ndx(ui) {
-        let hl_style = if ui.app.is_label_search_match(i) {
+        let hl_style = if ui.app.is_label_search_match(ui.app.ordering[i]) {
             Style::default().add_modifier(Modifier::REVERSED)
         } else {
             Style::default()
