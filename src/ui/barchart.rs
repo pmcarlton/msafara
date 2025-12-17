@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Thomas Junier
-// TODO: this module should be renamed "barchart", as it is used for purposes other than
-// conservation (such as sequence metrics).
 
 // 0 <= v <= 1
 pub fn values_barchart(values: &Vec<f64>) -> String {

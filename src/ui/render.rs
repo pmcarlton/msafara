@@ -11,6 +11,7 @@ use log::debug;
 
 use crate::{
     ui::{
+        aln_widget::AlnWidget,
         barchart::{value_to_hbar, values_barchart},
         color_scheme::Theme,
         msg_theme::style_for,
