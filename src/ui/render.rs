@@ -15,6 +15,10 @@ use crate::{
         barchart::{value_to_hbar, values_barchart},
         color_scheme::Theme,
         msg_theme::style_for,
+        style::{
+            build_style_lut,
+            get_residue_style,
+        },
         AlnWRTSeqPane, BottomPanePosition, InputMode, VideoMode, BORDER_WIDTH, MIN_COLS_SHOWN,
         V_SCROLLBAR_WIDTH,
     },
@@ -143,30 +147,6 @@ fn get_label_num_style(theme: Theme, color: Color) -> Style {
         }
         Theme::Monochrome => {
             style = style.fg(Color::Reset).bg(Color::Reset);
-        }
-    }
-
-    style
-}
-
-// FIXME Shouldn't this be a part of UI rather than Render (like get_seq_metric_style()? We could
-// dispense with passing theme and mode
-pub fn get_residue_style(video_mode: VideoMode, theme: Theme, color: Color) -> Style {
-    let mut style = Style::default();
-
-    match theme {
-        Theme::Dark | Theme::Light => {
-            style = style.fg(color);
-        }
-        Theme::Monochrome => {
-            style = style.fg(Color::Reset).bg(Color::Reset);
-        }
-    }
-
-    if video_mode == VideoMode::Inverse {
-        style = style.add_modifier(Modifier::REVERSED);
-        if Theme::Light == theme {
-            style = style.bg(Color::Black);
         }
     }
 
@@ -759,14 +739,14 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
 
     // EXPERIMENTAL SeqPane
 
+    let style_lut = build_style_lut(&ui);
+
     let pane = SeqPane {
         sequences: &ui.app.alignment.sequences,
         ordering: &ui.app.ordering,
         top_i: ui.top_line as usize,
         left_j: ui.leftmost_col as usize,
-        video_mode: ui.video_mode,
-        theme: &ui.theme(),
-        colormap: ui.color_scheme().current_residue_colormap(),
+        style_lut: &style_lut,
         base_style: Style::default(),
     };
 

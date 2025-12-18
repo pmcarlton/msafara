@@ -7,6 +7,7 @@ mod color_scheme;
 pub mod key_handling;
 pub mod render;
 mod msg_theme;
+mod style;
 
 use std::{
         cmp::{max, min},

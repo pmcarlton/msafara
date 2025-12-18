@@ -4,26 +4,15 @@ use ratatui::{
     widgets::Widget,
 };
 
-use crate::ui::{color_map::ColorMap, render::get_residue_style, Theme, VideoMode};
+use crate::ui::{color_map::ColorMap, style::get_residue_style, Theme, VideoMode};
 
 pub struct SeqPane<'a> {
     pub sequences: &'a [String],
     pub ordering: &'a [usize],
     pub top_i: usize,
     pub left_j: usize,
-    pub video_mode: VideoMode,
-    pub theme: &'a Theme,
-    pub colormap: &'a ColorMap,
+    pub style_lut: &'a[Style], 
     pub base_style: Style, // optional, for clearing/background
-}
-
-impl<'a> SeqPane<'a> {
-    #[inline]
-    fn style_for_byte(&self, b: u8) -> Style {
-        // assuming ASCII residues
-        let ch = b as char;
-        get_residue_style(self.video_mode, *self.theme, self.colormap.get(ch))
-    }
 }
 
 impl<'a> Widget for SeqPane<'a> {
@@ -53,7 +42,7 @@ impl<'a> Widget for SeqPane<'a> {
                     break;
                 }
                 let b = seq[j];
-                let style = self.style_for_byte(b);
+                let style = self.style_lut[b as usize];
 
                 buf.get_mut(area.x + c as u16, area.y + r as u16)
                     .set_char(b as char)
