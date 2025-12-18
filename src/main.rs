@@ -17,13 +17,14 @@ use std::{
         BufRead,
         BufReader,
         stdout,
-    }
+    },
+    time::{Duration, Instant},
 };
 
 use clap::{arg, command, Parser, ValueEnum};
 
 use crossterm::{
-    event::{self, KeyEventKind},
+    event::{self, Event, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
@@ -125,7 +126,7 @@ struct Cli {
     no_scrollbars: bool,
 
     /// Poll wait time [ms]
-    #[clap(long = "poll-wait-time", default_value_t = 100)]
+    #[clap(long = "poll-wait-time", default_value_t = 50)]
     poll_wait_time: u64,
 
     /// Panic (for testing)
@@ -256,7 +257,13 @@ fn main() -> Result<(), TermalError> {
             app_ui.prev_colormap();
         }
 
+        let poll_wait = Duration::from_millis(cli.poll_wait_time); 
+        let frame_interval = Duration::from_millis(50); // FIXME: constant or option
+        let mut last_draw: Instant;
+
         terminal.draw(|f| render_ui(f, &mut app_ui))?;
+        last_draw = Instant::now();
+
         // main loop
         loop {
             // Wait for an event (or timeout)
@@ -264,15 +271,21 @@ fn main() -> Result<(), TermalError> {
             // when scrolling past a boundary (=> no change). Have handle_key_press() return (done,
             // dirty) (i.e. a tuple of booleans).
             //let mut dirty = true;
-            if event::poll(std::time::Duration::from_millis(cli.poll_wait_time))? {
+            if event::poll(poll_wait)? {
                 match event::read()? {
                     event::Event::Key(key) if key.kind == KeyEventKind::Press => {
                         let done = handle_key_press(&mut app_ui, key);
                         if done { break; }
-                        terminal.draw(|f| render_ui(f, &mut app_ui))?;
+
+                        // Only draw if enough time has elapsed
+                        if last_draw.elapsed() >= frame_interval {
+                            terminal.draw(|f| render_ui(f, &mut app_ui))?;
+                            last_draw = Instant::now();
+                        }
                     }
                     event::Event::Resize(_, _) => {
                         terminal.draw(|f| render_ui(f, &mut app_ui))?;
+                        last_draw = Instant::now();
                     }
                     _ => {}
                 }

@@ -291,7 +291,9 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         // are possible).
         // TODO: not sure we're keeping the "bottom" position. Seems much better to stick it to the
         // last seq in the alignment.
-        KeyCode::Char('b') => { ui.cycle_bottom_pane_position(); }
+        KeyCode::Char('b') => {
+            ui.cycle_bottom_pane_position();
+        }
 
         // ---- Visuals ----
 
