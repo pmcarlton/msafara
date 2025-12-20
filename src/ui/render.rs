@@ -620,7 +620,7 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
             };
             f.render_widget(pane, inner_aln_block);
         }
-        ZoomLevel::ZoomedOut => {
+        ZoomLevel::ZoomedOut | ZoomLevel::ZoomedOutAR => {
             let zoombox_color = ui.get_zoombox_color();
             let pane = SeqPaneZoomedOut {
                 sequences: &ui.app.alignment.sequences,
@@ -629,6 +629,7 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
                 retained_cols: &retained_col_ndx(ui),
                 style_lut: &style_lut,
                 base_style: Style::default(),
+                show_zoombox: ui.show_zoombox,
                 zb_top: ui.zoombox_top(),
                 zb_bottom: ui.zoombox_bottom(retained_seq_ndx(ui).len()),
                 zb_left: ui.zoombox_left(),
@@ -637,7 +638,6 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
             };
             f.render_widget(pane, inner_aln_block);
         }
-        _ => todo!(),
     }
 
     // let seq_para = Paragraph::new(seq).block(aln_block);

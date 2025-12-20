@@ -66,6 +66,7 @@ pub struct SeqPaneZoomedOut<'a> {
     pub retained_cols: &'a [usize], // indices into alignment columns (j)
     pub style_lut: &'a [Style],     // style per byte (0..=255)
     pub base_style: Style,          // for clearing/background
+    pub show_zoombox: bool,
     pub zb_top: usize,
     pub zb_bottom: usize,
     pub zb_left: usize,
@@ -114,15 +115,16 @@ impl<'a> Widget for SeqPaneZoomedOut<'a> {
             }
         }
 
-        // TODO: make this conditional on ui.show_zoombox
-        draw_zoombox_border(
-            buf,
-            area,
-            self.zb_top,
-            self.zb_bottom,
-            self.zb_left,
-            self.zb_right,
-            self.zb_style,
-        );
+        if self.show_zoombox {
+            draw_zoombox_border(
+                buf,
+                area,
+                self.zb_top,
+                self.zb_bottom,
+                self.zb_left,
+                self.zb_right,
+                self.zb_style,
+            );
+        }
     }
 }
