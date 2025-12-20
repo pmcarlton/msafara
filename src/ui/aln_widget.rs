@@ -12,6 +12,7 @@ pub struct SeqPane<'a> {
     pub top_i: usize,
     pub left_j: usize,
     pub style_lut: &'a[Style], 
+    // TODO: not sure this is required - if not, also remove from other SeqPane* structs
     pub base_style: Style, // optional, for clearing/background
 }
 
@@ -42,6 +43,58 @@ impl<'a> Widget for SeqPane<'a> {
                     break;
                 }
                 let b = seq[j];
+                let style = self.style_lut[b as usize];
+
+                buf.get_mut(area.x + c as u16, area.y + r as u16)
+                    .set_char(b as char)
+                    .set_style(style);
+            }
+        }
+    }
+}
+
+pub struct SeqPaneZoomedOut<'a> {
+    pub sequences: &'a [String],        // alignment.sequences
+    pub ordering:  &'a [usize],         // ordering map
+    pub retained_rows: &'a [usize],     // indices into "logical rows" (i in your old code)
+    pub retained_cols: &'a [usize],     // indices into alignment columns (j)
+    pub style_lut: &'a [Style],         // style per byte (0..=255)
+    pub base_style: Style,              // for clearing/background
+}
+
+impl<'a> Widget for SeqPaneZoomedOut<'a> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let rows = area.height as usize;
+        let cols = area.width as usize;
+
+        // Clear pane (same rationale as your zoomed-in version)
+        for y in 0..rows {
+            for x in 0..cols {
+                buf.get_mut(area.x + x as u16, area.y + y as u16)
+                    .set_char(' ')
+                    .set_style(self.base_style);
+            }
+        }
+
+        // Render sampled rows/cols
+        let max_r = rows.min(self.retained_rows.len());
+        let max_c = cols.min(self.retained_cols.len());
+
+        for r in 0..max_r {
+            let i = self.retained_rows[r];
+            if i >= self.ordering.len() {
+                continue; // or break; depending on your retained list invariants
+            }
+
+            let seq_bytes = self.sequences[self.ordering[i]].as_bytes();
+
+            for c in 0..max_c {
+                let j = self.retained_cols[c];
+                if j >= seq_bytes.len() {
+                    continue; // or break; if cols are sorted and always increasing
+                }
+
+                let b = seq_bytes[j];
                 let style = self.style_lut[b as usize];
 
                 buf.get_mut(area.x + c as u16, area.y + r as u16)

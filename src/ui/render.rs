@@ -11,7 +11,7 @@ use log::debug;
 
 use crate::{
     ui::{
-        aln_widget::SeqPane,
+        aln_widget::{SeqPane, SeqPaneZoomedOut},
         barchart::{value_to_hbar, values_barchart},
         color_scheme::Theme,
         msg_theme::style_for,
@@ -618,14 +618,14 @@ fn tick_position(aln_length: usize) -> String {
 // Draw UI
 ****************************************************************/
 
-fn compute_title(ui: &UI, aln_para: &[Line]) -> String {
+fn compute_title(ui: &UI) -> String {
     ui.common_ratio();
     let title = format!(
         " {} | {}/{}s x {}/{}c | {} {}",
         ui.app.filename,
-        aln_para.len(),
+        ui.max_nb_seq_shown(),
         ui.app.num_seq(),
-        aln_para[0].spans.len(),
+        ui.max_nb_col_shown(),
         ui.app.aln_len(),
         ui.color_scheme(),
         ui.video_mode,
@@ -641,6 +641,7 @@ fn compute_title(ui: &UI, aln_para: &[Line]) -> String {
     )
 }
 
+// TODO: will be replaced by a SeqPane
 fn compute_aln_pane_text<'a>(ui: &'a UI<'a>) -> Vec<Line<'a>> {
     let mut sequences: Vec<Line>;
 
@@ -719,11 +720,12 @@ fn render_seq_metrics_pane(f: &mut Frame, num_chunk: Rect, ui: &UI) {
 }
 
 fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
-    let mut seq = compute_aln_pane_text(ui);
-    let title = compute_title(ui, &seq);
+    //let mut seq = compute_aln_pane_text(ui);
+    let title = compute_title(ui);
     let aln_block = Block::default().title(title).borders(Borders::ALL);
     let inner_aln_block = aln_block.inner(aln_chunk);
 
+    /*
     if ui.show_zb_guides {
         if ui.zoom_level == ZoomLevel::ZoomedIn {
             for _ in seq.len()..ui.max_nb_seq_shown() as usize {
@@ -736,24 +738,42 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
             seq.append(&mut guides);
         }
     }
+    */
+
+    f.render_widget(aln_block, aln_chunk);
 
     // EXPERIMENTAL SeqPane
 
     let style_lut = build_style_lut(&ui);
 
-    let pane = SeqPane {
-        sequences: &ui.app.alignment.sequences,
-        ordering: &ui.app.ordering,
-        top_i: ui.top_line as usize,
-        left_j: ui.leftmost_col as usize,
-        style_lut: &style_lut,
-        base_style: Style::default(),
-    };
+    match ui.zoom_level {
+        ZoomLevel::ZoomedIn => {
+            let pane = SeqPane {
+                sequences: &ui.app.alignment.sequences,
+                ordering: &ui.app.ordering,
+                top_i: ui.top_line as usize,
+                left_j: ui.leftmost_col as usize,
+                style_lut: &style_lut,
+                base_style: Style::default(),
+            };
+            f.render_widget(pane, inner_aln_block);
+        }
+        ZoomLevel::ZoomedOut => {
+            let pane = SeqPaneZoomedOut {
+                sequences: &ui.app.alignment.sequences,
+                ordering: &ui.app.ordering,
+                retained_rows: &retained_seq_ndx(ui),
+                retained_cols: &retained_col_ndx(ui),
+                style_lut: &style_lut,
+                base_style: Style::default(),
+            };
+            f.render_widget(pane, inner_aln_block);
+        }
+        _ => todo!(),
+    }
 
     // let seq_para = Paragraph::new(seq).block(aln_block);
     // f.render_widget(seq_para, aln_chunk);
-    f.render_widget(aln_block, aln_chunk);
-    f.render_widget(pane, inner_aln_block);
 
     if ui.zoom_level == ZoomLevel::ZoomedIn && ui.show_scrollbars {
         let zoombox_color = ui.get_zoombox_color();
