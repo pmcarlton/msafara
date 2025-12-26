@@ -17,7 +17,7 @@ use crate::ui::color_scheme::{
     JALVIEW_NUCLEOTIDE_R, JALVIEW_NUCLEOTIDE_S, JALVIEW_NUCLEOTIDE_T, JALVIEW_NUCLEOTIDE_U,
     JALVIEW_NUCLEOTIDE_V, JALVIEW_NUCLEOTIDE_W, JALVIEW_NUCLEOTIDE_X, JALVIEW_NUCLEOTIDE_Y, ORANGE,
 };
-use crate::TermalError;
+use crate::errors::TermalError;
 
 #[derive(Clone)]
 pub struct ColorMap {

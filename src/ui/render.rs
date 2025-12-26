@@ -9,8 +9,7 @@ use ratatui::{
 
 use log::debug;
 
-use crate::{
-    ui::{
+use super::{
         aln_widget::{SeqPane, SeqPaneZoomedOut},
         barchart::{value_to_hbar, values_barchart},
         color_scheme::Theme,
@@ -18,9 +17,11 @@ use crate::{
         style::{build_style_lut, get_residue_style},
         AlnWRTSeqPane, BottomPanePosition, InputMode, VideoMode, BORDER_WIDTH, MIN_COLS_SHOWN,
         V_SCROLLBAR_WIDTH,
-    },
+        ZoomLevel, UI,
+};
+
+use crate::{
     vec_f64_aux::{normalize, ones_complement, product},
-    ZoomLevel, UI,
 };
 
 /*****************************************************************

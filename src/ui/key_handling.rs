@@ -5,13 +5,13 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use log::debug;
 
-use crate::ui::{
+use super::{
     InputMode,
     InputMode::{Help, LabelSearch, Normal, PendingCount, Search},
     //SearchDirection,
+    {ZoomLevel, UI},
 };
 
-use crate::{ZoomLevel, UI};
 
 pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
     let mut done = false;

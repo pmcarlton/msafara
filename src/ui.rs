@@ -22,12 +22,12 @@ use bitflags::bitflags;
 use ratatui::layout::Size;
 use ratatui::style::{Color, Style};
 
-use crate::{
-    ui::color_scheme::{ColorScheme, Theme},
-    ui::color_map::colormap_gecos,
-    App,
+use self::{
+    color_scheme::{ColorScheme, Theme},
+    color_map::colormap_gecos,
 };
 
+use crate::app::App;
 
 const V_SCROLLBAR_WIDTH: u16 = 1;
 const MIN_COLS_SHOWN: u16 = 1;
