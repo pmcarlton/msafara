@@ -422,9 +422,8 @@ fn order<T: PartialOrd>(elems: &[T]) -> Vec<usize> {
 mod tests {
 
     use crate::{
-        Alignment,
-        App,
-        app::order,
+        alignment::Alignment,
+        app::{order, App},
     };
 
     #[test]
