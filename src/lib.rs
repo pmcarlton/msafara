@@ -1,10 +1,10 @@
-mod alignment;
-mod app;
+pub mod app;
 mod runner;
 mod seq;
-mod ui;
 mod vec_f64_aux;
+pub mod alignment;
 pub mod errors;
+pub mod ui;
 
 use crate::errors::TermalError;
 

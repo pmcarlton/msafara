@@ -1,12 +1,18 @@
 use ratatui::{backend::TestBackend, Terminal};
 use ratatui::buffer::Buffer;
 
-use termal_msa::ui::render_ui;
+use termal_msa::app::App;
+use termal_msa::ui::{
+    render::render_ui,
+    UI,
+};
 
-pub fn render(app: &termal_msa::app::App, w: u16, h: u16) -> Buffer {
+pub fn render(app: &mut App, w: u16, h: u16) -> Buffer {
     let backend = TestBackend::new(w, h);
     let mut terminal = Terminal::new(backend).expect("terminal");
-    terminal.draw(|f| render_ui(app, f)).expect("draw");
+    // terminal.draw(|f| termal_msa::ui::draw(app, f)).expect("draw");
+    let mut ui = UI::new(app);
+    terminal.draw(|f| render_ui(f, &mut ui)).expect("draw");
     terminal.backend().buffer().clone()
 }
 
