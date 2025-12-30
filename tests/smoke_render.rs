@@ -1,4 +1,6 @@
-mod utils;
+mod common;
+
+use crate::common::utils;
 
 use termal_msa::alignment::Alignment;
 use termal_msa::app::App;
