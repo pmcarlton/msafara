@@ -559,8 +559,15 @@ mod tests {
         let aln = Alignment::from_vecs(hdrs, seqs);
         let mut app = App::new("TEST", aln, None);
         app.regex_search_labels("^A");
-        todo!();
-
+        match app.search_state {
+            Some(state) => {
+                assert_eq!(state.pattern, "^A");
+                assert_eq!(state.match_linenums, vec![0, 1]);
+                assert_eq!(state.current, 0);
+                assert_eq!(state.hdr_match_status, vec![true, true, false, false, false]);
+            }
+            None => panic!(),
+        }
     }
 
 }

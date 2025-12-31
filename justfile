@@ -5,4 +5,4 @@ tags:
     ctags -R --exclude='data/*' --exclude='target/*'
 
 test:
-	cargo test --no-fail-fast
+	cargo test --color=always --no-fail-fast
