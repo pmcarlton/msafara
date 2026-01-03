@@ -13,6 +13,7 @@ const screen_width: u16 = 80;
 const screen_height: u16 = 50;
 
 #[test]
+/// Tests a whole label search, for a label that is found in the alignment.
 fn test_label_search() {
     utils::with_rig("tests/data/test-motion.msa",
         screen_width, screen_height,
@@ -105,5 +106,177 @@ fn test_label_search() {
             last_line
         );
 
+        // Pressing 'p' should cause the modeline to change to "match #8/8"
+
+        key_handling::handle_key_press(ui, utils::keypress('p'));
+        terminal.draw(|f| render::render_ui(f, &mut ui)).expect("update");
+        let buffer = terminal.backend().buffer();
+        let last_line = utils::screen_line(&buffer, last_line_y);
+
+        let expected = "match #8/8";
+        assert!(
+            last_line.contains(expected),
+            "\"{}\" not found on last line: {}", 
+            expected, last_line
+        );
+
+        // Pressing 'n' another 7 times should cause the modeline to cycle back to "match #1/8"
+
+        key_handling::handle_key_press(ui, utils::keypress('p'));
+        key_handling::handle_key_press(ui, utils::keypress('p'));
+        key_handling::handle_key_press(ui, utils::keypress('p'));
+        key_handling::handle_key_press(ui, utils::keypress('p'));
+        key_handling::handle_key_press(ui, utils::keypress('p'));
+        key_handling::handle_key_press(ui, utils::keypress('p'));
+        key_handling::handle_key_press(ui, utils::keypress('p'));
+        terminal.draw(|f| render::render_ui(f, &mut ui)).expect("update");
+        let buffer = terminal.backend().buffer();
+        let last_line = utils::screen_line(&buffer, last_line_y);
+
+        let expected = "match #1/8";
+        assert!(
+            last_line.contains(expected),
+            "\"{}\" not found on last line: {}", 
+            expected, last_line
+        );
+
+        // Pressing Esc should clear modeline
+
+        key_handling::handle_key_press(ui, KeyCode::Esc.into());
+        terminal.draw(|f| render::render_ui(f, &mut ui)).expect("update");
+        let buffer = terminal.backend().buffer();
+        let last_line = utils::screen_line(&buffer, last_line_y);
+
+        let expected = "└─────────────────└─";
+        assert!(
+            last_line.contains(expected),
+            "\"{}\" not found on last line: {}", 
+            expected, last_line
+        );
+
     });
+}
+
+#[test]
+/// Tests a label search, for a label that is NOT found in the alignment.
+fn test_missing_label_search() {
+    utils::with_rig("tests/data/test-motion.msa",
+        screen_width, screen_height,
+        |mut ui, terminal| {
+        let key_double_quote = utils::keypress('"');
+        let last_line_y = screen_height - 1;
+
+        // We enter label search ("), then enter a label that's NOT in the alignment ("MISS")
+
+        key_handling::handle_key_press(ui, key_double_quote);
+        key_handling::handle_key_press(ui, utils::keypress('M'));
+        key_handling::handle_key_press(ui, utils::keypress('I'));
+        key_handling::handle_key_press(ui, utils::keypress('S'));
+        key_handling::handle_key_press(ui, utils::keypress('S'));
+        terminal.draw(|f| render::render_ui(f, &mut ui)).expect("update");
+        let buffer = terminal.backend().buffer();
+        let last_line = utils::screen_line(&buffer, last_line_y);
+
+        let expected = "Label search: MISS";
+        assert!(
+            last_line.contains(expected),
+            "\"{}\" not found on last line: {}",
+            expected, last_line
+        );
+
+        // Pressing Enter should cause "No match." to appear in the modeline
+
+        key_handling::handle_key_press(ui, KeyCode::Enter.into());
+        terminal.draw(|f| render::render_ui(f, &mut ui)).expect("update");
+        let buffer = terminal.backend().buffer();
+        let last_line = utils::screen_line(&buffer, last_line_y);
+
+        let expected = "No match.";
+        assert!(
+            last_line.contains(expected),
+            "\"{}\" not found on last line: {}",
+            expected, last_line
+        );
+
+        // Pressing Esc should clear modeline
+
+        key_handling::handle_key_press(ui, KeyCode::Esc.into());
+        terminal.draw(|f| render::render_ui(f, &mut ui)).expect("update");
+        let buffer = terminal.backend().buffer();
+        let last_line = utils::screen_line(&buffer, last_line_y);
+
+        let expected = "└─────────────────└─";
+        assert!(
+            last_line.contains(expected),
+            "\"{}\" not found on last line: {}", 
+            expected, last_line
+        );
+
+    });
+}
+
+#[test]
+/// Tests that the Del key works as expected
+fn test_label_search_del() {
+    utils::with_rig("tests/data/test-motion.msa",
+        screen_width, screen_height,
+        |mut ui, terminal| {
+        let key_double_quote = utils::keypress('"');
+        let last_line_y = screen_height - 1;
+
+        // We enter label search ("), then enter a label "MISS")
+
+        key_handling::handle_key_press(ui, key_double_quote);
+        key_handling::handle_key_press(ui, utils::keypress('M'));
+        key_handling::handle_key_press(ui, utils::keypress('I'));
+        key_handling::handle_key_press(ui, utils::keypress('S'));
+        key_handling::handle_key_press(ui, utils::keypress('S'));
+        terminal.draw(|f| render::render_ui(f, &mut ui)).expect("update");
+        let buffer = terminal.backend().buffer();
+        let last_line = utils::screen_line(&buffer, last_line_y);
+
+        let expected = "Label search: MISS";
+        assert!(
+            last_line.contains(expected),
+            "\"{}\" not found on last line: {}",
+            expected, last_line
+        );
+
+        // Pressing Del then 'T' "Label search: MIST" to show in the modeline
+
+        key_handling::handle_key_press(ui, KeyCode::Delete.into());
+        key_handling::handle_key_press(ui, utils::keypress('T'));
+
+        terminal.draw(|f| render::render_ui(f, &mut ui)).expect("update");
+        let buffer = terminal.backend().buffer();
+        let last_line = utils::screen_line(&buffer, last_line_y);
+
+        let expected = "Label search: MIST";
+        assert!(
+            last_line.contains(expected),
+            "\"{}\" not found on last line: {}",
+            expected, last_line
+        );
+
+        // Pressing Esc should clear modeline
+
+        key_handling::handle_key_press(ui, KeyCode::Esc.into());
+        terminal.draw(|f| render::render_ui(f, &mut ui)).expect("update");
+        let buffer = terminal.backend().buffer();
+        let last_line = utils::screen_line(&buffer, last_line_y);
+
+        let expected = "└─────────────────└─";
+        assert!(
+            last_line.contains(expected),
+            "\"{}\" not found on last line: {}", 
+            expected, last_line
+        );
+
+    });
+}
+
+#[test]
+fn test_label_search_malformed() {
+    // pass a malformed regex and ck that the expected error message appears in the modeline
+    todo!();
 }
