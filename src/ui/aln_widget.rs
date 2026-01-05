@@ -5,7 +5,7 @@ use ratatui::{
 };
 
 use crate::ui::{
-    color_map::ColorMap, style::get_residue_style, zoombox::draw_zoombox_border, Theme, VideoMode,
+    zoombox::draw_zoombox_border,
 };
 
 pub struct SeqPane<'a> {

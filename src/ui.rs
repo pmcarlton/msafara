@@ -15,8 +15,6 @@ use std::{
         fmt,
 };
 
-use log::debug;
-
 use bitflags::bitflags;
 
 use ratatui::layout::Size;

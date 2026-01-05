@@ -1,4 +1,3 @@
-
 use std::{
     fmt,
     fs::File,
@@ -10,7 +9,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use log::{debug, info};
+use log::info;
 
 use crate::alignment::Alignment;
 use crate::app::App;
@@ -19,13 +18,13 @@ use crate::seq::stockholm::read_stockholm_file;
 use crate::ui::{
     key_handling::handle_key_press,
     render::render_ui,
-    {ZoomLevel, UI},
+    UI,
 };
 
 use clap::{arg, command, Parser, ValueEnum};
 
 use crossterm::{
-    event::{self, Event, KeyEventKind},
+    event::{self, KeyEventKind},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };

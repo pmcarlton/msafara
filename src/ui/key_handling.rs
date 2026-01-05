@@ -3,8 +3,6 @@
 // Copyright (c) 2025 Thomas Junier
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use log::debug;
-
 use super::{
     InputMode,
     InputMode::{Help, LabelSearch, Normal, PendingCount, Search},

@@ -5,8 +5,6 @@ use ratatui::{
     style::Style
 };
 
-use log::debug;
-
 /*
 pub fn draw_zoombox_border(
     buf: &mut Buffer,

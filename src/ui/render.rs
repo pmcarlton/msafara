@@ -7,8 +7,6 @@ use ratatui::{
     Frame,
 };
 
-use log::debug;
-
 use super::{
         aln_widget::{SeqPane, SeqPaneZoomedOut},
         barchart::{value_to_hbar, values_barchart},
