@@ -8,7 +8,7 @@ readme = "README.crates.md"
 description = "A viewer of multiple sequence alignments, with a text user interface"
 keywords = ["multiple-alignment", "viewer", "terminal", "TUI"]
 categories = ["science::bioinformatics", "science::bioinformatics::sequence-analysis", "command-line-utilities"]
-include = ["**/*.rs", "src/ui/bindings.md", "Cargo.toml", "README.crates.md", "data/example-1.msa", "data/CD00377_ICL-PEPM_wDesc.msa", "data/PF00244.26.sto"]
+include = ["**/*.rs", "src/ui/bindings.md", "Cargo.toml", "README.crates.md", "data/example-1.msa", "data/CD00377_ICL-PEPM_wDesc.msa", "data/PF00244.26.sto", "data/OX_OFA-pg2.msa", "data/OX_OFA-pg2.order"]
 #homepage: no page other than repo
 rust-version = "1.79" # May compile with earlier ones, but not checked.
 
@@ -25,7 +25,6 @@ crossterm = "0.28.1"
 ratatui = "0.29"
 clap = { version = "4.5.4", features = ["derive", "cargo"] }
 bitflags = "2.6.0"
-approx = "0.3.2"    # needed for testing vec_f64_aux
 serde_json = "1.0.135"
 hex_color = "3"
 itertools = "0.13.0"
@@ -33,3 +32,4 @@ regex = "1.12.2"
 
 [dev-dependencies]
 insta = "1"
+approx = "0.3.2"    # needed for testing vec_f64_aux
