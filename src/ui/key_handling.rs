@@ -130,6 +130,17 @@ fn handle_search(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
             ui.input_mode = InputMode::Normal;
             ui.app.clear_msg();
         }
+        KeyCode::Enter => {
+            let query = editor.text();
+            ui.app.regex_search_sequences(&query);
+            ui.input_mode = InputMode::Normal;
+            if let Some((total, sequences)) = ui.app.seq_search_counts() {
+                ui.app
+                    .info_msg(format!("{total} matches in {sequences} sequences"));
+            } else if query.is_empty() {
+                ui.app.info_msg("0 matches in 0 sequences");
+            }
+        }
         KeyCode::Char(c) if c.is_ascii_graphic() || c == ' ' => {
             editor.insert_char(c);
             ui.input_mode = InputMode::Search { editor };

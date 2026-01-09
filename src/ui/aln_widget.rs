@@ -1,15 +1,13 @@
-// SPDX-License-Identifier: MIT 
-// Copyright (c) 2025 Thomas Junier 
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2025 Thomas Junier
 
 use ratatui::{
     prelude::{Buffer, Position, Rect},
-    style::Style,
+    style::{Modifier, Style},
     widgets::Widget,
 };
 
-use crate::ui::{
-    zoombox::draw_zoombox_border,
-};
+use crate::ui::zoombox::draw_zoombox_border;
 
 pub struct SeqPane<'a> {
     pub sequences: &'a [String],
@@ -17,6 +15,7 @@ pub struct SeqPane<'a> {
     pub top_i: usize,
     pub left_j: usize,
     pub style_lut: &'a [Style],
+    pub match_spans: Option<&'a [Vec<(usize, usize)>]>,
     // TODO: not sure this is required - if not, also remove from other SeqPane* structs
     pub base_style: Style, // optional, for clearing/background
 }
@@ -29,7 +28,8 @@ impl<'a> Widget for SeqPane<'a> {
         // Clear the pane so “extra space” doesn’t show stale cells.
         for y in 0..rows {
             for x in 0..cols {
-                buf.cell_mut(Position::from((area.x + x as u16, area.y + y as u16))).expect("Wrong position")
+                buf.cell_mut(Position::from((area.x + x as u16, area.y + y as u16)))
+                    .expect("Wrong position")
                     .set_char(' ')
                     .set_style(self.base_style);
             }
@@ -40,7 +40,9 @@ impl<'a> Widget for SeqPane<'a> {
             if i >= self.ordering.len() {
                 break;
             }
-            let seq = self.sequences[self.ordering[i]].as_bytes();
+            let seq_index = self.ordering[i];
+            let seq = self.sequences[seq_index].as_bytes();
+            let spans = self.match_spans.and_then(|all| all.get(seq_index));
 
             for c in 0..cols {
                 let j = self.left_j + c;
@@ -48,9 +50,16 @@ impl<'a> Widget for SeqPane<'a> {
                     break;
                 }
                 let b = seq[j];
-                let style = self.style_lut[b as usize];
+                let mut style = self.style_lut[b as usize];
+                if spans
+                    .map(|seq_spans| in_spans(seq_spans, j))
+                    .unwrap_or(false)
+                {
+                    style = style.add_modifier(Modifier::REVERSED);
+                }
 
-                buf.cell_mut(Position::from((area.x + c as u16, area.y + r as u16))).expect("Wrong position")
+                buf.cell_mut(Position::from((area.x + c as u16, area.y + r as u16)))
+                    .expect("Wrong position")
                     .set_char(b as char)
                     .set_style(style);
             }
@@ -64,7 +73,8 @@ pub struct SeqPaneZoomedOut<'a> {
     pub retained_rows: &'a [usize], // indices into "logical rows"
     pub retained_cols: &'a [usize], // indices into alignment columns
     pub style_lut: &'a [Style],     // style per byte (0..=255)
-    pub base_style: Style,          // for clearing/background
+    pub match_spans: Option<&'a [Vec<(usize, usize)>]>,
+    pub base_style: Style, // for clearing/background
     pub show_zoombox: bool,
     pub zb_top: usize,
     pub zb_bottom: usize,
@@ -81,7 +91,8 @@ impl<'a> Widget for SeqPaneZoomedOut<'a> {
         // Clear pane (see ZoomedIn mode)
         for y in 0..rows {
             for x in 0..cols {
-                buf.cell_mut(Position::from((area.x + x as u16, area.y + y as u16))).expect("Wrong position")
+                buf.cell_mut(Position::from((area.x + x as u16, area.y + y as u16)))
+                    .expect("Wrong position")
                     .set_char(' ')
                     .set_style(self.base_style);
             }
@@ -98,7 +109,9 @@ impl<'a> Widget for SeqPaneZoomedOut<'a> {
                 panic!();
             }
 
-            let seq_bytes = self.sequences[self.ordering[i]].as_bytes();
+            let seq_index = self.ordering[i];
+            let seq_bytes = self.sequences[seq_index].as_bytes();
+            let spans = self.match_spans.and_then(|all| all.get(seq_index));
 
             for c in 0..max_c {
                 let j = self.retained_cols[c];
@@ -108,9 +121,16 @@ impl<'a> Widget for SeqPaneZoomedOut<'a> {
                 }
 
                 let b = seq_bytes[j];
-                let style = self.style_lut[b as usize];
+                let mut style = self.style_lut[b as usize];
+                if spans
+                    .map(|seq_spans| in_spans(seq_spans, j))
+                    .unwrap_or(false)
+                {
+                    style = style.add_modifier(Modifier::REVERSED);
+                }
 
-                buf.cell_mut(Position::from((area.x + c as u16, area.y + r as u16))).expect("Wrong position")
+                buf.cell_mut(Position::from((area.x + c as u16, area.y + r as u16)))
+                    .expect("Wrong position")
                     .set_char(b as char)
                     .set_style(style);
             }
@@ -128,4 +148,8 @@ impl<'a> Widget for SeqPaneZoomedOut<'a> {
             );
         }
     }
+}
+
+fn in_spans(spans: &[(usize, usize)], col: usize) -> bool {
+    spans.iter().any(|(start, end)| *start <= col && col < *end)
 }

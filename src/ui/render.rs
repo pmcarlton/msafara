@@ -8,19 +8,16 @@ use ratatui::{
 };
 
 use super::{
-        aln_widget::{SeqPane, SeqPaneZoomedOut},
-        barchart::{value_to_hbar, values_barchart},
-        color_scheme::Theme,
-        msg_theme::style_for,
-        style::{build_style_lut, get_residue_style},
-        AlnWRTSeqPane, BottomPanePosition, InputMode, VideoMode, BORDER_WIDTH, MIN_COLS_SHOWN,
-        V_SCROLLBAR_WIDTH,
-        ZoomLevel, UI,
+    aln_widget::{SeqPane, SeqPaneZoomedOut},
+    barchart::{value_to_hbar, values_barchart},
+    color_scheme::Theme,
+    msg_theme::style_for,
+    style::{build_style_lut, get_residue_style},
+    AlnWRTSeqPane, BottomPanePosition, InputMode, VideoMode, ZoomLevel, BORDER_WIDTH,
+    MIN_COLS_SHOWN, UI, V_SCROLLBAR_WIDTH,
 };
 
-use crate::{
-    vec_f64_aux::{normalize, ones_complement, product},
-};
+use crate::vec_f64_aux::{normalize, ones_complement, product};
 
 /*****************************************************************
  * Panel Texts
@@ -400,6 +397,7 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
     f.render_widget(aln_block, aln_chunk);
 
     let style_lut = build_style_lut(&ui);
+    let match_spans = ui.app.seq_search_spans();
 
     match ui.zoom_level {
         ZoomLevel::ZoomedIn => {
@@ -409,6 +407,7 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
                 top_i: ui.top_line as usize,
                 left_j: ui.leftmost_col as usize,
                 style_lut: &style_lut,
+                match_spans,
                 base_style: Style::default(),
             };
             f.render_widget(pane, inner_aln_block);
@@ -421,6 +420,7 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
                 retained_rows: &retained_seq_ndx(ui),
                 retained_cols: &retained_col_ndx(ui),
                 style_lut: &style_lut,
+                match_spans,
                 base_style: Style::default(),
                 show_zoombox: ui.show_zoombox,
                 zb_top: ui.zoombox_top(),
