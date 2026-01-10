@@ -492,6 +492,22 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         KeyCode::Char('?') => ui.app.warning_msg("Search not implemented yet"),
         KeyCode::Char(']') => ui.app.warning_msg("Search not implemented yet"),
         KeyCode::Char('[') => ui.app.warning_msg("Search not implemented yet"),
+        KeyCode::Char('P') => {
+            if let Some(query) = ui.app.current_seq_search_pattern() {
+                match ui
+                    .app
+                    .add_saved_search(query.to_string(), query.to_string())
+                {
+                    Ok(_) => {
+                        ui.app.clear_seq_search();
+                        ui.app.info_msg("Saved current search");
+                    }
+                    Err(e) => ui.app.error_msg(e),
+                }
+            } else {
+                ui.app.warning_msg("No current search to save");
+            }
+        }
 
         // ----- Editing -----
         // Filter alignment through external command (à la Vim's '!')

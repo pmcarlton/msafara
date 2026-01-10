@@ -485,6 +485,10 @@ impl App {
             .map(|state| (state.total_matches, state.sequences_with_matches))
     }
 
+    pub fn clear_seq_search(&mut self) {
+        self.seq_search_state = None;
+    }
+
     pub fn search_color_config(&self) -> &SearchColorConfig {
         &self.search_color_config
     }
