@@ -538,6 +538,7 @@ impl<'a> UI<'a> {
     pub fn search_highlights(&self) -> (Vec<SearchHighlight<'_>>, SearchHighlightConfig) {
         let mut highlights: Vec<SearchHighlight> = Vec::new();
         let config = self.app.search_color_config();
+        let current_match = self.app.current_seq_match();
         if let Some(spans) = self.app.seq_search_spans() {
             highlights.push(SearchHighlight {
                 spans_by_seq: spans,
@@ -563,6 +564,7 @@ impl<'a> UI<'a> {
                 min_component: config.min_component,
                 gap_dim_factor: config.gap_dim_factor,
                 luminance_threshold: config.luminance_threshold,
+                current_match,
             },
         )
     }
@@ -757,6 +759,19 @@ impl<'a> UI<'a> {
         let next_match_orig_line = self.app.current_label_match_screenlinenum();
         if let Some(line) = next_match_orig_line {
             self.jump_to_line(line as u16);
+        }
+    }
+
+    pub fn jump_to_next_seq_match(&mut self, count: i16) {
+        if let Some((cur, total)) = self.app.increment_current_seq_match(count as isize) {
+            if let Some(m) = self.app.current_seq_match() {
+                let screenline = self.app.rank_to_screenline(m.seq_index) as u16;
+                self.jump_to_line(screenline);
+                self.leftmost_col = m.start as u16;
+            }
+            self.app.info_msg(format!("match {} of {}", cur, total));
+        } else {
+            self.app.info_msg("No current search");
         }
     }
 

@@ -85,6 +85,15 @@ pub struct SeqSearchState {
     pub spans_by_seq: Vec<Vec<(usize, usize)>>,
     pub total_matches: usize,
     pub sequences_with_matches: usize,
+    pub matches: Vec<SeqMatch>,
+    pub current_match: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SeqMatch {
+    pub seq_index: usize,
+    pub start: usize,
+    pub end: usize,
 }
 
 pub struct SearchColorConfig {
@@ -485,6 +494,32 @@ impl App {
             .map(|state| (state.total_matches, state.sequences_with_matches))
     }
 
+    pub fn has_seq_search(&self) -> bool {
+        self.seq_search_state
+            .as_ref()
+            .map(|state| state.total_matches > 0)
+            .unwrap_or(false)
+    }
+
+    pub fn current_seq_match(&self) -> Option<SeqMatch> {
+        self.seq_search_state
+            .as_ref()
+            .and_then(|state| state.matches.get(state.current_match).copied())
+    }
+
+    pub fn increment_current_seq_match(&mut self, count: isize) -> Option<(usize, usize)> {
+        if let Some(state) = &mut self.seq_search_state {
+            if state.matches.is_empty() {
+                return None;
+            }
+            let len = state.matches.len() as isize;
+            let new = (state.current_match as isize + count).rem_euclid(len) as usize;
+            state.current_match = new;
+            return Some((state.current_match + 1, state.matches.len()));
+        }
+        None
+    }
+
     pub fn clear_seq_search(&mut self) {
         self.seq_search_state = None;
     }
@@ -682,6 +717,7 @@ fn compute_seq_search_state(
     let mut spans_by_seq: Vec<Vec<(usize, usize)>> = Vec::with_capacity(sequences.len());
     let mut total_matches = 0;
     let mut sequences_with_matches = 0;
+    let mut matches: Vec<SeqMatch> = Vec::new();
     for seq in sequences {
         let (ungapped, map) = ungapped_seq_and_map(seq);
         let mut spans: Vec<(usize, usize)> = Vec::new();
@@ -702,11 +738,22 @@ fn compute_seq_search_state(
         }
         spans_by_seq.push(spans);
     }
+    for (seq_index, spans) in spans_by_seq.iter().enumerate() {
+        for (start, end) in spans {
+            matches.push(SeqMatch {
+                seq_index,
+                start: *start,
+                end: *end,
+            });
+        }
+    }
     Ok(SeqSearchState {
         pattern: pattern.to_string(),
         spans_by_seq,
         total_matches,
         sequences_with_matches,
+        matches,
+        current_match: 0,
     })
 }
 
@@ -731,7 +778,7 @@ mod tests {
 
     use crate::{
         alignment::Alignment,
-        app::{order, App},
+        app::{order, App, SeqMatch},
     };
 
     #[test]
@@ -891,6 +938,15 @@ mod tests {
         assert_eq!(spans[0], vec![(2, 6)]);
         let counts = app.seq_search_counts().unwrap();
         assert_eq!(counts, (1, 1));
+        let cur = app.current_seq_match().unwrap();
+        assert_eq!(
+            cur,
+            SeqMatch {
+                seq_index: 0,
+                start: 2,
+                end: 6
+            }
+        );
     }
 
     #[test]

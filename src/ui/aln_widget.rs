@@ -3,11 +3,11 @@
 
 use ratatui::{
     prelude::{Buffer, Position, Rect},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     widgets::Widget,
 };
 
-use crate::ui::zoombox::draw_zoombox_border;
+use crate::{app::SeqMatch, ui::zoombox::draw_zoombox_border};
 
 pub struct SearchHighlight<'a> {
     pub spans_by_seq: &'a [Vec<(usize, usize)>],
@@ -18,6 +18,7 @@ pub struct SearchHighlightConfig {
     pub min_component: u8,
     pub gap_dim_factor: f32,
     pub luminance_threshold: f32,
+    pub current_match: Option<SeqMatch>,
 }
 
 pub struct SeqPane<'a> {
@@ -65,10 +66,13 @@ impl<'a> Widget for SeqPane<'a> {
                 }
                 let b = seq[j];
                 let mut style = self.style_lut[b as usize].bg(Color::Black);
-                if let Some((color, use_black_fg)) = highlight_color(j, b as char) {
+                if let Some((color, use_black_fg, is_current)) = highlight_color(j, b as char) {
                     style = style.bg(color);
                     if use_black_fg {
                         style = style.fg(Color::Black);
+                    }
+                    if is_current {
+                        style = style.add_modifier(Modifier::UNDERLINED);
                     }
                 }
 
@@ -139,10 +143,13 @@ impl<'a> Widget for SeqPaneZoomedOut<'a> {
 
                 let b = seq_bytes[j];
                 let mut style = self.style_lut[b as usize].bg(Color::Black);
-                if let Some((color, use_black_fg)) = highlight_color(j, b as char) {
+                if let Some((color, use_black_fg, is_current)) = highlight_color(j, b as char) {
                     style = style.bg(color);
                     if use_black_fg {
                         style = style.fg(Color::Black);
+                    }
+                    if is_current {
+                        style = style.add_modifier(Modifier::UNDERLINED);
                     }
                 }
 
@@ -177,7 +184,7 @@ fn highlight_color(
     seq_index: usize,
     col: usize,
     ch: char,
-) -> Option<(Color, bool)> {
+) -> Option<(Color, bool, bool)> {
     let colors: Vec<(u8, u8, u8)> = highlights
         .iter()
         .filter_map(|highlight| {
@@ -198,7 +205,11 @@ fn highlight_color(
     }
     let lum = luminance(r, g, b);
     let use_black_fg = lum >= config.luminance_threshold;
-    Some((Color::Rgb(r, g, b), use_black_fg))
+    let is_current = config
+        .current_match
+        .map(|m| m.seq_index == seq_index && m.start <= col && col < m.end)
+        .unwrap_or(false);
+    Some((Color::Rgb(r, g, b), use_black_fg, is_current))
 }
 
 fn color_to_rgb(color: Color) -> Option<(u8, u8, u8)> {

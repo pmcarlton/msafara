@@ -424,8 +424,20 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         KeyCode::Char('#') => ui.jump_to_pct_col(count as u16),
 
         // To search matches
-        KeyCode::Char('n') => ui.jump_to_next_lbl_match(count as i16),
-        KeyCode::Char('p') => ui.jump_to_next_lbl_match(-1 * count as i16),
+        KeyCode::Char('n') => {
+            if ui.app.has_seq_search() {
+                ui.jump_to_next_seq_match(count as i16);
+            } else {
+                ui.jump_to_next_lbl_match(count as i16);
+            }
+        }
+        KeyCode::Char('p') => {
+            if ui.app.has_seq_search() {
+                ui.jump_to_next_seq_match(-1 * count as i16);
+            } else {
+                ui.jump_to_next_lbl_match(-1 * count as i16);
+            }
+        }
 
         // Left Pane width
         KeyCode::Char('>') => ui.widen_label_pane(count as u16),
