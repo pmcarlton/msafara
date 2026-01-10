@@ -562,6 +562,7 @@ impl<'a> UI<'a> {
             SearchHighlightConfig {
                 min_component: config.min_component,
                 gap_dim_factor: config.gap_dim_factor,
+                luminance_threshold: config.luminance_threshold,
             },
         )
     }

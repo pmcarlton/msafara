@@ -17,6 +17,7 @@ pub struct SearchHighlight<'a> {
 pub struct SearchHighlightConfig {
     pub min_component: u8,
     pub gap_dim_factor: f32,
+    pub luminance_threshold: f32,
 }
 
 pub struct SeqPane<'a> {
@@ -63,9 +64,12 @@ impl<'a> Widget for SeqPane<'a> {
                     break;
                 }
                 let b = seq[j];
-                let mut style = self.style_lut[b as usize];
-                if let Some(color) = highlight_color(j, b as char) {
+                let mut style = self.style_lut[b as usize].bg(Color::Black);
+                if let Some((color, use_black_fg)) = highlight_color(j, b as char) {
                     style = style.bg(color);
+                    if use_black_fg {
+                        style = style.fg(Color::Black);
+                    }
                 }
 
                 buf.cell_mut(Position::from((area.x + c as u16, area.y + r as u16)))
@@ -134,9 +138,12 @@ impl<'a> Widget for SeqPaneZoomedOut<'a> {
                 }
 
                 let b = seq_bytes[j];
-                let mut style = self.style_lut[b as usize];
-                if let Some(color) = highlight_color(j, b as char) {
+                let mut style = self.style_lut[b as usize].bg(Color::Black);
+                if let Some((color, use_black_fg)) = highlight_color(j, b as char) {
                     style = style.bg(color);
+                    if use_black_fg {
+                        style = style.fg(Color::Black);
+                    }
                 }
 
                 buf.cell_mut(Position::from((area.x + c as u16, area.y + r as u16)))
@@ -170,7 +177,7 @@ fn highlight_color(
     seq_index: usize,
     col: usize,
     ch: char,
-) -> Option<Color> {
+) -> Option<(Color, bool)> {
     let colors: Vec<(u8, u8, u8)> = highlights
         .iter()
         .filter_map(|highlight| {
@@ -189,7 +196,9 @@ fn highlight_color(
     if is_gap(ch) {
         dim_color(&mut r, &mut g, &mut b, config.gap_dim_factor);
     }
-    Some(Color::Rgb(r, g, b))
+    let lum = luminance(r, g, b);
+    let use_black_fg = lum >= config.luminance_threshold;
+    Some((Color::Rgb(r, g, b), use_black_fg))
 }
 
 fn color_to_rgb(color: Color) -> Option<(u8, u8, u8)> {
@@ -215,20 +224,24 @@ fn blend_colors(colors: &[(u8, u8, u8)]) -> (u8, u8, u8) {
 }
 
 fn normalize_min_component(r: &mut u8, g: &mut u8, b: &mut u8, min_component: u8) {
-    let min_val = (*r).min(*g).min(*b);
-    if min_val >= min_component {
+    let max_val = (*r).max(*g).max(*b);
+    if max_val >= min_component || max_val == 0 {
         return;
     }
-    let delta = min_component.saturating_sub(min_val) as u16;
-    *r = (*r as u16 + delta).min(u8::MAX as u16) as u8;
-    *g = (*g as u16 + delta).min(u8::MAX as u16) as u8;
-    *b = (*b as u16 + delta).min(u8::MAX as u16) as u8;
+    let factor = min_component as f32 / max_val as f32;
+    *r = ((*r as f32) * factor).round().min(u8::MAX as f32) as u8;
+    *g = ((*g as f32) * factor).round().min(u8::MAX as f32) as u8;
+    *b = ((*b as f32) * factor).round().min(u8::MAX as f32) as u8;
 }
 
 fn dim_color(r: &mut u8, g: &mut u8, b: &mut u8, factor: f32) {
     *r = ((*r as f32) * factor).round().min(u8::MAX as f32) as u8;
     *g = ((*g as f32) * factor).round().min(u8::MAX as f32) as u8;
     *b = ((*b as f32) * factor).round().min(u8::MAX as f32) as u8;
+}
+
+fn luminance(r: u8, g: u8, b: u8) -> f32 {
+    (0.2126 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32) / 255.0
 }
 
 fn is_gap(c: char) -> bool {
@@ -244,7 +257,7 @@ mod tests {
         let colors = vec![(100, 0, 0), (0, 100, 0)];
         let (mut r, mut g, mut b) = blend_colors(&colors);
         normalize_min_component(&mut r, &mut g, &mut b, 100);
-        assert_eq!((r, g, b), (150, 150, 100));
+        assert_eq!((r, g, b), (100, 100, 0));
     }
 
     #[test]

@@ -196,7 +196,7 @@ pub fn run() -> Result<(), TermalError> {
             app.error_msg(msg);
         }
 
-        let default_search_colors = "data/search_colors.json";
+        let default_search_colors = "colors.config";
         let search_colors_path = cli.search_colors.or_else(|| {
             if Path::new(default_search_colors).exists() {
                 Some(default_search_colors.to_string())

@@ -27,6 +27,7 @@ const DEFAULT_SEARCH_PALETTE: [SearchColor; 6] = [
 const DEFAULT_CURRENT_SEARCH_COLOR: SearchColor = (80, 80, 80);
 const DEFAULT_MIN_COMPONENT: u8 = 100;
 const DEFAULT_GAP_DIM_FACTOR: f32 = 0.5;
+const DEFAULT_LUMINANCE_THRESHOLD: f32 = 0.55;
 #[derive(Clone, Copy)]
 pub enum SeqOrdering {
     SourceFile,
@@ -91,6 +92,7 @@ pub struct SearchColorConfig {
     pub current_search: SearchColor,
     pub min_component: u8,
     pub gap_dim_factor: f32,
+    pub luminance_threshold: f32,
 }
 
 impl SearchColorConfig {
@@ -121,6 +123,11 @@ impl SearchColorConfig {
             .and_then(|v| v.as_f64())
             .map(|v| v.clamp(0.0, 1.0) as f32)
             .unwrap_or(DEFAULT_GAP_DIM_FACTOR);
+        let luminance_threshold = value
+            .get("luminance_threshold")
+            .and_then(|v| v.as_f64())
+            .map(|v| v.clamp(0.0, 1.0) as f32)
+            .unwrap_or(DEFAULT_LUMINANCE_THRESHOLD);
         Ok(Self {
             palette: if palette.is_empty() {
                 DEFAULT_SEARCH_PALETTE.to_vec()
@@ -130,6 +137,7 @@ impl SearchColorConfig {
             current_search,
             min_component,
             gap_dim_factor,
+            luminance_threshold,
         })
     }
 }
@@ -141,6 +149,7 @@ impl Default for SearchColorConfig {
             current_search: DEFAULT_CURRENT_SEARCH_COLOR,
             min_component: DEFAULT_MIN_COMPONENT,
             gap_dim_factor: DEFAULT_GAP_DIM_FACTOR,
+            luminance_threshold: DEFAULT_LUMINANCE_THRESHOLD,
         }
     }
 }

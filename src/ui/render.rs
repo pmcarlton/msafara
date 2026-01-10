@@ -398,6 +398,7 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
 
     let style_lut = build_style_lut(&ui);
     let (highlights, highlight_config) = ui.search_highlights();
+    let base_style = Style::default().bg(Color::Black);
 
     match ui.zoom_level {
         ZoomLevel::ZoomedIn => {
@@ -409,7 +410,7 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
                 style_lut: &style_lut,
                 highlights: &highlights,
                 highlight_config,
-                base_style: Style::default(),
+                base_style,
             };
             f.render_widget(pane, inner_aln_block);
         }
@@ -423,7 +424,7 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
                 style_lut: &style_lut,
                 highlights: &highlights,
                 highlight_config,
-                base_style: Style::default(),
+                base_style,
                 show_zoombox: ui.show_zoombox,
                 zb_top: ui.zoombox_top(),
                 zb_bottom: ui.zoombox_bottom(retained_seq_ndx(ui).len()),
