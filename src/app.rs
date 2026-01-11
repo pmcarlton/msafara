@@ -594,8 +594,17 @@ impl App {
         if query.is_empty() {
             return Err(String::from("Empty search query"));
         }
-        let state = compute_seq_search_state(&self.alignment.sequences, &query, kind)
-            .map_err(|e| format!("Malformed regex {}.", e))?;
+        let state = match kind {
+            SearchKind::Regex => compute_seq_search_state(&self.alignment.sequences, &query, kind)
+                .map_err(|e| format!("Malformed regex {}.", e))?,
+            SearchKind::Emboss => compute_emboss_search_state(
+                &self.alignment.headers,
+                &self.alignment.sequences,
+                &query,
+                self.emboss_bin_dir.as_deref(),
+            )
+            .map_err(|e| format!("Emboss search failed: {}", e))?,
+        };
         self.search_registry
             .add_search(name, query, kind, state.spans_by_seq);
         Ok(())
@@ -684,11 +693,20 @@ impl App {
     fn refresh_saved_searches(&mut self) {
         let sequences = &self.alignment.sequences;
         for entry in &mut self.search_registry.searches {
-            if let Ok(state) = compute_seq_search_state(sequences, &entry.query, entry.kind) {
-                entry.spans_by_seq = state.spans_by_seq;
-            } else {
-                entry.spans_by_seq = vec![Vec::new(); sequences.len()];
-            }
+            let state = match entry.kind {
+                SearchKind::Regex => compute_seq_search_state(sequences, &entry.query, entry.kind)
+                    .map_err(|e| TermalError::Format(format!("Malformed regex: {}", e))),
+                SearchKind::Emboss => compute_emboss_search_state(
+                    &self.alignment.headers,
+                    sequences,
+                    &entry.query,
+                    self.emboss_bin_dir.as_deref(),
+                ),
+            };
+            entry.spans_by_seq = match state {
+                Ok(state) => state.spans_by_seq,
+                Err(_) => vec![Vec::new(); sequences.len()],
+            };
         }
     }
 
@@ -931,17 +949,22 @@ fn compute_emboss_search_state(
     let tool_path = emboss_bin_dir
         .map(|dir| dir.join(tool))
         .unwrap_or_else(|| PathBuf::from(tool));
+    let (pmis, emboss_pattern) = parse_emboss_query(pattern);
 
     let tmp_path = emboss_temp_fasta(headers, sequences)?;
-    let output = std::process::Command::new(tool_path)
-        .arg("-seq")
+    let mut cmd = std::process::Command::new(tool_path);
+    cmd.arg("-seq")
         .arg(&tmp_path)
         .arg("-pat")
-        .arg(pattern)
+        .arg(emboss_pattern)
         .arg("-out")
         .arg("stdout")
         .arg("-rformat")
-        .arg("gff")
+        .arg("gff");
+    if let Some(mismatches) = pmis {
+        cmd.arg("-pmis").arg(mismatches.to_string());
+    }
+    let output = cmd
         .output()
         .map_err(|e| TermalError::Format(format!("Failed to run {}: {}", tool, e)))?;
     fs::remove_file(&tmp_path).ok();
@@ -952,6 +975,28 @@ fn compute_emboss_search_state(
     }
     let stdout = String::from_utf8_lossy(&output.stdout);
     parse_gff_to_state(headers, sequences, &stdout, pattern)
+}
+
+fn parse_emboss_query(query: &str) -> (Option<u32>, &str) {
+    let trimmed = query.trim();
+    let mut parts = trimmed.splitn(2, ' ');
+    let Some(first) = parts.next() else {
+        return (None, trimmed);
+    };
+    let Some(rest) = parts.next() else {
+        return (None, trimmed);
+    };
+    if !first.chars().all(|c| c.is_ascii_digit()) {
+        return (None, trimmed);
+    }
+    let Ok(value) = first.parse::<u32>() else {
+        return (None, trimmed);
+    };
+    let pattern = rest.trim_start();
+    if pattern.is_empty() {
+        return (None, trimmed);
+    }
+    (Some(value), pattern)
 }
 
 fn emboss_temp_fasta(headers: &[String], sequences: &[String]) -> Result<PathBuf, TermalError> {
@@ -1249,5 +1294,14 @@ mod tests {
         assert!(!app.saved_searches()[0].enabled);
         assert!(app.delete_saved_search(0));
         assert!(app.saved_searches().is_empty());
+    }
+
+    #[test]
+    fn test_parse_emboss_query() {
+        assert_eq!(super::parse_emboss_query("2 ABC"), (Some(2), "ABC"));
+        assert_eq!(super::parse_emboss_query("10   A*B"), (Some(10), "A*B"));
+        assert_eq!(super::parse_emboss_query("ABC"), (None, "ABC"));
+        assert_eq!(super::parse_emboss_query("2"), (None, "2"));
+        assert_eq!(super::parse_emboss_query("2  "), (None, "2"));
     }
 }
