@@ -1,5 +1,28 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+* Search mode with a line editor for sequence regex searches (`/`) and EMBOSS fuzzy searches (`\\`)
+* Search registry with multiple saved searches, enable/disable toggles, and a Search List panel (`:s`)
+* EMBOSS fuzzy search integration (fuzzpro/fuzznuc) with GFF parsing and `tools.config`
+* Optional leading mismatch count for EMBOSS patterns (e.g., `2 PATTERN` -> `-pmis 2`)
+* Configurable search colors via `colors.config` and mono-white as the default color mode
+* Header filtering: reject current header match to `rejected<file>` (`!`) and write filtered view to `filtered<file>` (`W`)
+* README caveat about terminal color schemes affecting ANSI colors
+
+### Changed
+
+* Status line now shows saved searches and the current search (including type R/E)
+* Current header match is highlighted with a red background; other header matches stay white
+* Current search highlight is dimmer; gap characters use half-intensity
+
+### Fixed
+
+* Search navigation now keeps current search active (n/p) and shows match M of N
+* Saved EMBOSS searches now highlight correctly
+
 ## [1.3.0]
 
 ### Added
