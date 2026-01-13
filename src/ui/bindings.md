@@ -34,12 +34,18 @@ Esc          : cancel search
 /regexp<Ret> : search sequences
 \\pattern<Ret> : search sequences (EMBOSS fuzzpro/fuzznuc; optional leading "N " sets -pmis)
 Esc          : cancel search
-:s<Ret>      : open Search List panel (a=add, c=current, d=delete, space=toggle, 1-9=select)
 P            : save current search and clear its highlights
-W            : write currently shown alignment to filtered<file>
+
+## Extended commands (:)
+
+:s<Ret>      : open Search List panel (a=add, c=current, d=delete, space=toggle, 1-9=select)
 :rc<Ret>     : reject current match (y/n to confirm)
 :ru<Ret>     : reject unmatched sequences (y/n to confirm)
 :rm<Ret>     : reject matched sequences (y/n to confirm)
+
+## Filtering
+
+W            : write currently shown alignment to filtered<file>
 
 ## Adjusting the Panes
 

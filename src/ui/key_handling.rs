@@ -19,7 +19,7 @@ pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
     let mode = ui.input_mode.clone();
     match mode {
         Normal => done = handle_normal_key(ui, key_event),
-        Help => ui.input_mode = InputMode::Normal,
+        Help => handle_help_key(ui, key_event),
         PendingCount { count } => done = handle_pending_count_key(ui, key_event, count),
         LabelSearch { pattern } => handle_label_search(ui, key_event, &pattern),
         Search { editor, kind } => handle_search(ui, key_event, editor, kind),
@@ -48,7 +48,10 @@ fn handle_normal_key(ui: &mut UI, key_event: KeyEvent) -> bool {
         KeyCode::Char('q') | KeyCode::Char('Q') => done = true,
         KeyCode::Char('c') if key_event.modifiers.contains(KeyModifiers::CONTROL) => done = true,
         // TODO: search
-        KeyCode::Char('?') => ui.input_mode = InputMode::Help,
+        KeyCode::Char('?') => {
+            ui.reset_help_scroll();
+            ui.input_mode = InputMode::Help;
+        }
         KeyCode::Char('"') => {
             ui.input_mode = InputMode::LabelSearch {
                 pattern: String::from(""),
@@ -82,6 +85,22 @@ fn handle_normal_key(ui: &mut UI, key_event: KeyEvent) -> bool {
         _ => dispatch_command(ui, key_event, None),
     }
     done
+}
+
+fn handle_help_key(ui: &mut UI, key_event: KeyEvent) {
+    match key_event.code {
+        KeyCode::Esc | KeyCode::Char('?') => {
+            ui.input_mode = InputMode::Normal;
+            ui.app.clear_msg();
+        }
+        KeyCode::Up | KeyCode::Char('k') => ui.help_scroll_by(-1),
+        KeyCode::Down | KeyCode::Char('j') => ui.help_scroll_by(1),
+        KeyCode::PageUp => ui.help_scroll_by(-(ui.help_page_height() as isize)),
+        KeyCode::PageDown | KeyCode::Char(' ') => {
+            ui.help_scroll_by(ui.help_page_height() as isize);
+        }
+        _ => {}
+    }
 }
 
 fn handle_pending_count_key(ui: &mut UI, key_event: KeyEvent, count: usize) -> bool {

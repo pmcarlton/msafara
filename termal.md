@@ -145,11 +145,19 @@ Searching
 * \\pattern<Ret> : search sequences (EMBOSS fuzzpro/fuzznuc; optional leading "N " sets -pmis)
 * n,p          : next / previous sequence match (current match underlined)
 * P            : save current sequence search and clear its highlights
+
+Extended commands (:)
+--------------------
+
 * :s<Ret>      : open Search List panel (a=add, c=current, d=delete, space=toggle, 1-9=select)
-* W            : write currently shown alignment to filtered<file>
 * :rc<Ret>     : reject current match (y/n to confirm)
 * :ru<Ret>     : reject unmatched sequences (y/n to confirm)
 * :rm<Ret>     : reject matched sequences (y/n to confirm)
+
+Filtering
+---------
+
+* W            : write currently shown alignment to filtered<file>
 
 OPTIONS
 =======

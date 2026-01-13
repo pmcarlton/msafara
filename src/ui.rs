@@ -86,6 +86,8 @@ enum RejectMode {
     Matched,
 }
 
+pub const USER_GUIDE: &str = include_str!("ui/bindings.md");
+
 #[derive(Clone, Copy, PartialEq)]
 #[allow(dead_code)]
 enum LabelSearchDirection {
@@ -150,6 +152,8 @@ pub struct UI<'a> {
     full_screen: bool,
     video_mode: VideoMode,
     input_mode: InputMode,
+    help_scroll: usize,
+    help_page_height: usize,
 }
 
 impl<'a> UI<'a> {
@@ -183,7 +187,26 @@ impl<'a> UI<'a> {
             full_screen: false,
             video_mode: VideoMode::Direct,
             input_mode: InputMode::Normal,
+            help_scroll: 0,
+            help_page_height: 1,
         }
+    }
+
+    pub fn reset_help_scroll(&mut self) {
+        self.help_scroll = 0;
+    }
+
+    pub fn help_scroll_by(&mut self, delta: isize) {
+        if delta == 0 {
+            return;
+        }
+        let cur = self.help_scroll as isize;
+        let next = (cur + delta).max(0);
+        self.help_scroll = next as usize;
+    }
+
+    pub fn help_page_height(&self) -> usize {
+        self.help_page_height.max(1)
     }
 
     // ****************************************************************

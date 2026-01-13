@@ -157,7 +157,7 @@ pub fn run() -> Result<(), TermalError> {
     }
 
     if cli.show_bindings {
-        println!("{}", include_str!("ui/bindings.md"));
+        println!("{}", crate::ui::USER_GUIDE);
         return Ok(());
     }
 

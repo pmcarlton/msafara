@@ -636,14 +636,22 @@ fn render_modeline(f: &mut Frame, last_content_line: u16, ui: &mut UI) {
     f.render_widget(modeline, modeline_rect);
 }
 
-fn render_help_dialog(f: &mut Frame, dialog_chunk: Rect) {
-    let dialog_block = Block::default().borders(Borders::ALL);
-    let bindings = include_str!("bindings.md");
-    let mut text = Text::from(bindings);
-    text.push_line("");
-    text.push_line("Press any key to close this dialog.");
-    let dialog_para = Paragraph::new(Text::from_iter(text))
+fn render_help_dialog(f: &mut Frame, dialog_chunk: Rect, ui: &mut UI) {
+    let dialog_block = Block::default().borders(Borders::ALL).title("Help");
+    let mut lines: Vec<Line> = crate::ui::USER_GUIDE.lines().map(Line::from).collect();
+    lines.push(Line::from(""));
+    lines.push(Line::from(
+        "Up/Down/PgUp/PgDn/Space to scroll, Esc or ? to close.",
+    ));
+    let visible_height = dialog_chunk.height.saturating_sub(2) as usize;
+    ui.help_page_height = visible_height.max(1);
+    let max_scroll = lines.len().saturating_sub(ui.help_page_height);
+    if ui.help_scroll > max_scroll {
+        ui.help_scroll = max_scroll;
+    }
+    let dialog_para = Paragraph::new(Text::from(lines))
         .block(dialog_block)
+        .scroll((ui.help_scroll as u16, 0))
         .style(Style::new().white().on_black());
     f.render_widget(Clear, dialog_chunk);
     f.render_widget(dialog_para, dialog_chunk);
@@ -735,7 +743,7 @@ pub fn render_ui(f: &mut Frame, ui: &mut UI) {
     );
 
     if ui.input_mode == InputMode::Help {
-        render_help_dialog(f, layout_panes.dialog);
+        render_help_dialog(f, layout_panes.dialog, ui);
         // after the first display of the help dialog, remove the message
         ui.app.clear_msg();
     }
