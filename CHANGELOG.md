@@ -28,6 +28,7 @@
 * Search navigation now keeps current search active (n/p) and shows match M of N
 * Saved EMBOSS searches now highlight correctly
 * Rejecting all sequences now exits cleanly with a message
+* SVG export overwrite confirmation now restores the prompt flow
 
 ## [1.3.0]
 

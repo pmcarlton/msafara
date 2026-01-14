@@ -379,10 +379,11 @@ fn handle_export_svg(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
             }
             if std::path::Path::new(&path).exists() {
                 ui.input_mode = InputMode::ConfirmOverwrite { editor, path };
-                ui.app.argument_msg(String::new(), ui.export_svg_text());
+                ui.app.info_msg("Overwrite SVG? (y/n)");
             } else {
+                ui.app.argument_msg(String::new(), path.clone());
                 match ui.export_svg(std::path::Path::new(&path)) {
-                    Ok(_) => ui.app.info_msg(path),
+                    Ok(_) => {}
                     Err(e) => ui.app.error_msg(format!("Export failed: {}", e)),
                 }
                 ui.input_mode = InputMode::Normal;
@@ -421,17 +422,17 @@ fn handle_export_svg(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
 fn handle_confirm_overwrite(ui: &mut UI, key_event: KeyEvent, editor: LineEditor, path: String) {
     match key_event.code {
         KeyCode::Char('y') | KeyCode::Char('Y') => {
+            ui.app.argument_msg(String::new(), path.clone());
             match ui.export_svg(std::path::Path::new(&path)) {
-                Ok(_) => ui.app.info_msg(path),
+                Ok(_) => {}
                 Err(e) => ui.app.error_msg(format!("Export failed: {}", e)),
             }
             ui.input_mode = InputMode::Normal;
         }
-        KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+        _ => {
             ui.input_mode = InputMode::ExportSvg { editor };
             ui.app.argument_msg(String::new(), ui.export_svg_text());
         }
-        _ => {}
     }
 }
 
