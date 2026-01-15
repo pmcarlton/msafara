@@ -28,6 +28,7 @@
 
 * Search navigation now keeps current search active (n/p) and shows match M of N
 * Saved EMBOSS searches now highlight correctly
+* Tree panel no longer leaves trailing padding before the label pane
 * Rejecting all sequences now exits cleanly with a message
 * SVG export overwrite confirmation now restores the prompt flow
 * MAFFT tree leaf names now map to headers with spaces/dots normalized and numeric prefixes stripped

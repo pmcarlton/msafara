@@ -100,9 +100,8 @@ fn render_box_tree(
 ) -> Vec<String> {
     let n_rows = leaves.iter().map(|(y, _)| *y).max().unwrap_or(0) + 1;
     let max_depth = node_map.values().map(|info| info.depth).max().unwrap_or(0);
-    let tree_width = max_depth * 2;
-    let label_start = tree_width + 2;
-    let mut grid: Vec<Vec<char>> = vec![vec![' '; label_start]; n_rows];
+    let tree_width = max_depth * 2 + 1;
+    let mut grid: Vec<Vec<char>> = vec![vec![' '; tree_width]; n_rows];
 
     fn put(grid: &mut [Vec<char>], y: usize, x: usize, ch: char) {
         if y >= grid.len() || x >= grid[y].len() {
@@ -181,7 +180,7 @@ fn render_box_tree(
             }
         }
         let start = last.map(|l| l + 1).unwrap_or(0);
-        for x in start..label_start {
+        for x in start..tree_width {
             put(&mut grid, y, x, '─');
         }
     }
