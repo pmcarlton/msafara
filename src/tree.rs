@@ -185,6 +185,20 @@ fn render_box_tree(
         }
     }
 
+    for row in &mut grid {
+        for x in 1..row.len() {
+            if row[x - 1] == '─' {
+                row[x] = match row[x] {
+                    '│' => '┤',
+                    '┌' => '┬',
+                    '└' => '┴',
+                    '├' => '┼',
+                    other => other,
+                };
+            }
+        }
+    }
+
     grid.into_iter()
         .map(|row| row.into_iter().collect::<String>().trim_end().to_string())
         .collect()
