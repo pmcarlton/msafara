@@ -895,27 +895,39 @@ impl App {
     fn map_order_to_headers(&self, order: Vec<String>) -> Result<Vec<String>, TermalError> {
         let expected: HashSet<String> = self.alignment.headers.iter().cloned().collect();
         let mut token_map: HashMap<String, String> = HashMap::new();
+        let mut normalized_map: HashMap<String, String> = HashMap::new();
         for header in &self.alignment.headers {
+            let normalized = normalize_tree_label(header);
+            insert_unique(&mut normalized_map, normalized, header)?;
             let token = header.split_whitespace().next().unwrap_or("").to_string();
             if token.is_empty() {
                 continue;
             }
-            if token_map.contains_key(&token) && token_map.get(&token) != Some(header) {
-                return Err(TermalError::Format(format!(
-                    "Non-unique header token: {}",
-                    token
-                )));
-            }
-            token_map.insert(token, header.clone());
+            insert_unique(&mut token_map, token.clone(), header)?;
+            let token_norm = normalize_tree_label(&token);
+            insert_unique(&mut token_map, token_norm, header)?;
         }
 
         let mut mapped: Vec<String> = Vec::with_capacity(order.len());
         for name in order {
+            let normalized = normalize_tree_label(&name);
             if expected.contains(&name) {
                 mapped.push(name);
                 continue;
             }
+            if let Some(header) = normalized_map.get(&name) {
+                mapped.push(header.clone());
+                continue;
+            }
+            if let Some(header) = normalized_map.get(&normalized) {
+                mapped.push(header.clone());
+                continue;
+            }
             if let Some(header) = token_map.get(&name) {
+                mapped.push(header.clone());
+                continue;
+            }
+            if let Some(header) = token_map.get(&normalized) {
                 mapped.push(header.clone());
                 continue;
             }
@@ -1018,6 +1030,32 @@ impl App {
         self.current_msg.message.pop();
         self.current_msg.kind = MessageKind::Argument;
     }
+}
+
+fn normalize_tree_label(label: &str) -> String {
+    label
+        .trim()
+        .chars()
+        .map(|c| if c.is_whitespace() { '_' } else { c })
+        .collect()
+}
+
+fn insert_unique(
+    map: &mut HashMap<String, String>,
+    key: String,
+    header: &str,
+) -> Result<(), TermalError> {
+    if key.is_empty() {
+        return Ok(());
+    }
+    if map.contains_key(&key) && map.get(&key).map(String::as_str) != Some(header) {
+        return Err(TermalError::Format(format!(
+            "Non-unique header token: {}",
+            key
+        )));
+    }
+    map.insert(key, header.to_string());
+    Ok(())
 }
 
 // Computes an ordering WRT an array, that is, an array of indices of elements of the source array,
@@ -1635,6 +1673,20 @@ mod tests {
         assert_eq!(
             app.user_ordering.unwrap(),
             vec![String::from("seq 1"), String::from("seq2")]
+        );
+    }
+
+    #[test]
+    fn test_tree_ordering_maps_underscored_headers() {
+        let hdrs = vec![String::from("1 CELEG-F08G5 1a"), String::from("seq2")];
+        let seqs = vec![String::from("AA"), String::from("AA")];
+        let aln = Alignment::from_vecs(hdrs, seqs);
+        let mut app = App::new("TEST", aln, None);
+        app.set_user_ordering(vec![String::from("1_CELEG-F08G5_1a"), String::from("seq2")])
+            .unwrap();
+        assert_eq!(
+            app.user_ordering.unwrap(),
+            vec![String::from("1 CELEG-F08G5 1a"), String::from("seq2")]
         );
     }
 
