@@ -885,17 +885,54 @@ impl App {
     }
 
     pub fn set_user_ordering(&mut self, order: Vec<String>) -> Result<(), TermalError> {
+        let mapped = self.map_order_to_headers(order)?;
+        self.user_ordering = Some(mapped);
+        self.ordering_criterion = User;
+        self.recompute_ordering();
+        Ok(())
+    }
+
+    fn map_order_to_headers(&self, order: Vec<String>) -> Result<Vec<String>, TermalError> {
         let expected: HashSet<String> = self.alignment.headers.iter().cloned().collect();
-        let provided: HashSet<String> = order.iter().cloned().collect();
+        let mut token_map: HashMap<String, String> = HashMap::new();
+        for header in &self.alignment.headers {
+            let token = header.split_whitespace().next().unwrap_or("").to_string();
+            if token.is_empty() {
+                continue;
+            }
+            if token_map.contains_key(&token) && token_map.get(&token) != Some(header) {
+                return Err(TermalError::Format(format!(
+                    "Non-unique header token: {}",
+                    token
+                )));
+            }
+            token_map.insert(token, header.clone());
+        }
+
+        let mut mapped: Vec<String> = Vec::with_capacity(order.len());
+        for name in order {
+            if expected.contains(&name) {
+                mapped.push(name);
+                continue;
+            }
+            if let Some(header) = token_map.get(&name) {
+                mapped.push(header.clone());
+                continue;
+            }
+            return Err(TermalError::Format(format!(
+                "Tree leaf does not match header: {}",
+                name
+            )));
+        }
+
+        let provided: HashSet<String> = mapped.iter().cloned().collect();
         if expected.len() != provided.len() || expected != provided {
             return Err(TermalError::Format(String::from(
                 "Tree leaves do not match alignment headers",
             )));
         }
-        self.user_ordering = Some(order);
-        self.ordering_criterion = User;
-        self.recompute_ordering();
-        Ok(())
+
+        Ok(mapped)
     }
 
     fn refresh_saved_searches(&mut self) {
@@ -1585,6 +1622,20 @@ mod tests {
         assert_eq!(app.get_seq_ordering(), SeqOrdering::SearchMatch);
         assert_eq!(app.current_seq_search_pattern(), Some("AA"));
         assert_eq!(app.seq_search_spans().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn test_tree_ordering_maps_header_tokens() {
+        let hdrs = vec![String::from("seq 1"), String::from("seq2")];
+        let seqs = vec![String::from("AA"), String::from("AA")];
+        let aln = Alignment::from_vecs(hdrs, seqs);
+        let mut app = App::new("TEST", aln, None);
+        app.set_user_ordering(vec![String::from("seq"), String::from("seq2")])
+            .unwrap();
+        assert_eq!(
+            app.user_ordering.unwrap(),
+            vec![String::from("seq 1"), String::from("seq2")]
+        );
     }
 
     #[test]
