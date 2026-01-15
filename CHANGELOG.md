@@ -14,6 +14,7 @@
 * Clustal alignment input format (`-f clustal`)
 * Wishlist document for future enhancements
 * SVG export of the current view (`:es`)
+* MAFFT realignment with guide tree output and tree panel (`:ra`)
 
 ### Changed
 

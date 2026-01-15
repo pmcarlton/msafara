@@ -2,10 +2,11 @@
 // Copyright (c) 2025 Thomas Junier
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fmt, fs,
     io::{BufWriter, Write},
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use hex_color::HexColor;
@@ -17,6 +18,8 @@ use crate::{
     app::Metric::{PctIdWrtConsensus, SeqLen},
     app::SeqOrdering::{MetricDecr, MetricIncr, SearchMatch, SourceFile, User},
     errors::TermalError,
+    seq::fasta::read_fasta_file,
+    tree::{parse_newick, tree_lines_and_order},
 };
 
 type SearchColor = (u8, u8, u8);
@@ -118,23 +121,6 @@ pub struct SearchColorConfig {
     pub luminance_threshold: f32,
 }
 
-pub struct EmbossConfig {
-    pub emboss_bin_dir: Option<PathBuf>,
-}
-
-impl EmbossConfig {
-    pub fn from_file(path: &str) -> Result<Self, TermalError> {
-        let contents = fs::read_to_string(path)?;
-        let value: Value =
-            serde_json::from_str(&contents).map_err(|e| format!("Invalid JSON: {}", e))?;
-        let emboss_bin_dir = value
-            .get("emboss_bin_dir")
-            .and_then(|v| v.as_str())
-            .map(PathBuf::from);
-        Ok(Self { emboss_bin_dir })
-    }
-}
-
 impl SearchColorConfig {
     pub fn from_file(path: &str) -> Result<Self, TermalError> {
         let contents = fs::read_to_string(path)?;
@@ -226,6 +212,32 @@ pub struct CurrentMessage {
     pub kind: MessageKind,
 }
 
+#[derive(Clone, Default)]
+pub struct ToolsConfig {
+    pub emboss_bin_dir: Option<PathBuf>,
+    pub mafft_bin_dir: Option<PathBuf>,
+}
+
+impl ToolsConfig {
+    pub fn from_file(path: &Path) -> Result<Self, TermalError> {
+        let contents = fs::read_to_string(path)?;
+        let value: Value = serde_json::from_str(&contents)
+            .map_err(|e| TermalError::Format(format!("Invalid JSON {}: {}", path.display(), e)))?;
+        let emboss_bin_dir = value
+            .get("emboss_bin_dir")
+            .and_then(|v| v.as_str())
+            .map(PathBuf::from);
+        let mafft_bin_dir = value
+            .get("mafft_bin_dir")
+            .and_then(|v| v.as_str())
+            .map(PathBuf::from);
+        Ok(Self {
+            emboss_bin_dir,
+            mafft_bin_dir,
+        })
+    }
+}
+
 pub struct App {
     pub filename: String,
     pub alignment: Alignment,
@@ -245,8 +257,11 @@ pub struct App {
     search_color_config: SearchColorConfig,
     current_msg: CurrentMessage,
     emboss_bin_dir: Option<PathBuf>,
+    mafft_bin_dir: Option<PathBuf>,
     filtered_output_path: PathBuf,
     rejected_output_path: PathBuf,
+    tree_lines: Vec<String>,
+    tree_panel_width: u16,
 }
 
 impl App {
@@ -274,8 +289,11 @@ impl App {
             search_color_config,
             current_msg: cur_msg,
             emboss_bin_dir: None,
+            mafft_bin_dir: None,
             filtered_output_path,
             rejected_output_path,
+            tree_lines: Vec::new(),
+            tree_panel_width: 0,
         }
     }
 
@@ -637,6 +655,10 @@ impl App {
         self.emboss_bin_dir = dir;
     }
 
+    pub fn set_mafft_bin_dir(&mut self, dir: Option<PathBuf>) {
+        self.mafft_bin_dir = dir;
+    }
+
     pub fn emboss_search_sequences(&mut self, pattern: &str) {
         if pattern.is_empty() {
             self.clear_seq_search();
@@ -794,6 +816,86 @@ impl App {
 
     pub fn rejected_path(&self) -> PathBuf {
         self.rejected_output_path.clone()
+    }
+
+    pub fn tree_lines(&self) -> &[String] {
+        &self.tree_lines
+    }
+
+    pub fn tree_panel_width(&self) -> u16 {
+        self.tree_panel_width
+    }
+
+    pub fn has_tree_panel(&self) -> bool {
+        !self.tree_lines.is_empty()
+    }
+
+    pub fn realign_with_mafft(&mut self) -> Result<(), TermalError> {
+        let mut input_path = std::env::temp_dir();
+        let unique = format!("termal-mafft-{}.fa", std::process::id());
+        input_path.push(unique);
+        self.write_alignment_fasta(&input_path)?;
+
+        let mut output_path = std::env::temp_dir();
+        let unique_out = format!("termal-mafft-{}.out.fa", std::process::id());
+        output_path.push(unique_out);
+
+        let tool_path = self
+            .mafft_bin_dir
+            .as_ref()
+            .map(|dir| dir.join("mafft"))
+            .unwrap_or_else(|| PathBuf::from("mafft"));
+        let output = Command::new(tool_path)
+            .arg("--treeout")
+            .arg("--reorder")
+            .arg(&input_path)
+            .output()
+            .map_err(|e| TermalError::Format(format!("Failed to run mafft: {}", e)))?;
+        if !output.status.success() {
+            let msg = String::from_utf8_lossy(&output.stderr);
+            return Err(TermalError::Format(format!("mafft failed: {}", msg)));
+        }
+        fs::write(&output_path, output.stdout)?;
+
+        let tree_path = PathBuf::from(format!("{}.tree", input_path.display()));
+        let tree_text = fs::read_to_string(&tree_path)?;
+        let tree = parse_newick(&tree_text)?;
+        let (lines, order) = tree_lines_and_order(&tree)?;
+
+        let seq_file = read_fasta_file(&output_path)?;
+        self.alignment = Alignment::from_file(seq_file);
+        self.search_state = None;
+        self.seq_search_state = None;
+        self.refresh_saved_searches();
+        self.set_user_ordering(order)?;
+        self.tree_lines = lines;
+        self.tree_panel_width = self
+            .tree_lines
+            .iter()
+            .map(|line| line.len())
+            .max()
+            .unwrap_or(0)
+            .min(u16::MAX as usize) as u16;
+        self.recompute_ordering();
+
+        fs::remove_file(&input_path).ok();
+        fs::remove_file(&output_path).ok();
+        fs::remove_file(&tree_path).ok();
+        Ok(())
+    }
+
+    pub fn set_user_ordering(&mut self, order: Vec<String>) -> Result<(), TermalError> {
+        let expected: HashSet<String> = self.alignment.headers.iter().cloned().collect();
+        let provided: HashSet<String> = order.iter().cloned().collect();
+        if expected.len() != provided.len() || expected != provided {
+            return Err(TermalError::Format(String::from(
+                "Tree leaves do not match alignment headers",
+            )));
+        }
+        self.user_ordering = Some(order);
+        self.ordering_criterion = User;
+        self.recompute_ordering();
+        Ok(())
     }
 
     fn refresh_saved_searches(&mut self) {

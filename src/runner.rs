@@ -12,7 +12,7 @@ use std::{
 use log::info;
 
 use crate::alignment::Alignment;
-use crate::app::{App, EmbossConfig, SearchColorConfig};
+use crate::app::{App, SearchColorConfig, ToolsConfig};
 use crate::seq::clustal::read_clustal_file;
 use crate::seq::fasta::read_fasta_file;
 use crate::seq::stockholm::read_stockholm_file;
@@ -230,8 +230,11 @@ pub fn run() -> Result<(), TermalError> {
             }
         });
         if let Some(path) = tools_config_path {
-            match EmbossConfig::from_file(&path) {
-                Ok(config) => app.set_emboss_bin_dir(config.emboss_bin_dir),
+            match ToolsConfig::from_file(Path::new(&path)) {
+                Ok(config) => {
+                    app.set_emboss_bin_dir(config.emboss_bin_dir);
+                    app.set_mafft_bin_dir(config.mafft_bin_dir);
+                }
                 Err(e) => app.error_msg(format!("Error reading tools config {}: {}", path, e)),
             }
         }

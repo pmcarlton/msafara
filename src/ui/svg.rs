@@ -12,12 +12,8 @@ use ratatui::{
     TerminalOptions, Viewport,
 };
 
-use crate::{
-    errors::TermalError,
-    ui::{
-        render::render_ui, BottomPanePosition, BORDER_WIDTH, MIN_COLS_SHOWN, UI, V_SCROLLBAR_WIDTH,
-    },
-};
+use crate::errors::TermalError;
+use crate::ui::{render::render_ui, BottomPanePosition, UI};
 
 const FONT_SIZE: u16 = 14;
 const CELL_WIDTH: u16 = 8;
@@ -167,7 +163,7 @@ fn sequence_pane_rect(ui: &UI, area: Rect) -> Rect {
         }
     };
     let v_panes = Layout::new(Direction::Vertical, constraints).split(area);
-    let min_seq_pane_width = V_SCROLLBAR_WIDTH + MIN_COLS_SHOWN + BORDER_WIDTH;
+    let min_seq_pane_width = super::V_SCROLLBAR_WIDTH + super::MIN_COLS_SHOWN + super::BORDER_WIDTH;
     let upper_panes = Layout::new(
         Direction::Horizontal,
         vec![

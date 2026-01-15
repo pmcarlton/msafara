@@ -247,6 +247,21 @@ fn handle_command(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
                 }
                 ui.input_mode = InputMode::ExportSvg { editor };
                 ui.app.argument_msg(String::new(), ui.export_svg_text());
+            } else if cmd.trim() == "ra" {
+                ui.app.info_msg("Running mafft...");
+                match ui.app.realign_with_mafft() {
+                    Ok(()) => {
+                        ui.show_tree_panel(true);
+                        ui.app.info_msg("Realigned with mafft");
+                    }
+                    Err(e) => ui.app.error_msg(format!("mafft failed: {}", e)),
+                }
+            } else if cmd.trim() == "tt" {
+                if ui.app.has_tree_panel() {
+                    ui.toggle_tree_panel();
+                } else {
+                    ui.app.warning_msg("No tree available");
+                }
             } else if cmd.trim() == "rc" {
                 ui.input_mode = InputMode::ConfirmReject {
                     mode: RejectMode::Current,

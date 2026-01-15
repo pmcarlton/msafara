@@ -164,6 +164,7 @@ struct Panes {
     lbl_num: Rect,
     labels: Rect,
     seq_metrics: Rect,
+    tree: Option<Rect>,
 
     // Alignment pane
     sequence: Rect,
@@ -247,14 +248,30 @@ fn make_layout(f: &Frame, ui: &UI) -> Panes {
     let v_panes = Layout::new(Direction::Vertical, constraints).split(f.area());
 
     let min_seq_pane_width = V_SCROLLBAR_WIDTH + MIN_COLS_SHOWN + BORDER_WIDTH;
+    let tree_width = if ui.is_tree_panel_visible() {
+        ui.app.tree_panel_width().max(3)
+    } else {
+        0
+    };
+    let left_total = ui.left_pane_width + tree_width;
     let upper_panes = Layout::new(
         Direction::Horizontal,
         vec![
-            Constraint::Max(ui.left_pane_width),
+            Constraint::Max(left_total),
             Constraint::Min(min_seq_pane_width),
         ],
     )
     .split(v_panes[0]);
+    let label_area = if ui.is_tree_panel_visible() {
+        let left_split = Layout::new(
+            Direction::Horizontal,
+            vec![Constraint::Length(tree_width), Constraint::Fill(1)],
+        )
+        .split(upper_panes[0]);
+        left_split[1]
+    } else {
+        upper_panes[0]
+    };
     let lbl_num_pane_num_cols = ui.seq_num_pane_width();
     let lbl_pane = Layout::new(
         Direction::Horizontal,
@@ -264,11 +281,11 @@ fn make_layout(f: &Frame, ui: &UI) -> Panes {
             Constraint::Length(3),
         ],
     )
-    .split(upper_panes[0]);
+    .split(label_area);
     let lower_panes = Layout::new(
         Direction::Horizontal,
         vec![
-            Constraint::Max(ui.left_pane_width),
+            Constraint::Max(left_total),
             Constraint::Fill(min_seq_pane_width),
         ],
     )
@@ -281,6 +298,17 @@ fn make_layout(f: &Frame, ui: &UI) -> Panes {
         lbl_num: lbl_pane[0],
         labels: lbl_pane[1],
         seq_metrics: lbl_pane[2],
+        tree: if ui.is_tree_panel_visible() {
+            Some(
+                Layout::new(
+                    Direction::Horizontal,
+                    vec![Constraint::Length(tree_width), Constraint::Fill(1)],
+                )
+                .split(upper_panes[0])[0],
+            )
+        } else {
+            None
+        },
         sequence: upper_panes[1],
         corner: lower_panes[0],
         bottom: lower_panes[1],
@@ -366,6 +394,18 @@ fn render_label_nums_pane(f: &mut Frame, num_chunk: Rect, ui: &UI) {
         .scroll((top_lbl_line, 0))
         .block(lbl_num_block);
     f.render_widget(lbl_num_para, num_chunk);
+}
+
+fn render_tree_pane(f: &mut Frame, tree_chunk: Rect, ui: &UI) {
+    let block = Block::default().borders(Borders::TOP | Borders::LEFT | Borders::BOTTOM);
+    let top_line = match ui.zoom_level() {
+        ZoomLevel::ZoomedIn => ui.top_line,
+        ZoomLevel::ZoomedOut => 0,
+        ZoomLevel::ZoomedOutAR => 0,
+    };
+    let text = Text::from_iter(ui.app.tree_lines().iter().cloned());
+    let para = Paragraph::new(text).scroll((top_line, 0)).block(block);
+    f.render_widget(para, tree_chunk);
 }
 
 fn render_labels_pane(f: &mut Frame, seq_chunk: Rect, ui: &UI) {
@@ -734,6 +774,9 @@ pub fn render_ui(f: &mut Frame, ui: &mut UI) {
     // ui.width_debug_msg();
 
     /* Render panes */
+    if let Some(tree) = layout_panes.tree {
+        render_tree_pane(f, tree, ui);
+    }
     render_label_nums_pane(f, layout_panes.lbl_num, ui);
     render_labels_pane(f, layout_panes.labels, ui);
     render_seq_metrics_pane(f, layout_panes.seq_metrics, ui);

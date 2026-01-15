@@ -168,6 +168,7 @@ pub struct UI<'a> {
     help_scroll: usize,
     help_page_height: usize,
     exit_message: Option<String>,
+    show_tree_panel: bool,
 }
 
 impl<'a> UI<'a> {
@@ -204,6 +205,7 @@ impl<'a> UI<'a> {
             help_scroll: 0,
             help_page_height: 1,
             exit_message: None,
+            show_tree_panel: false,
         }
     }
 
@@ -234,6 +236,18 @@ impl<'a> UI<'a> {
 
     pub fn take_exit_message(&mut self) -> Option<String> {
         self.exit_message.take()
+    }
+
+    pub fn show_tree_panel(&mut self, show: bool) {
+        self.show_tree_panel = show;
+    }
+
+    pub fn toggle_tree_panel(&mut self) {
+        self.show_tree_panel = !self.show_tree_panel;
+    }
+
+    pub fn is_tree_panel_visible(&self) -> bool {
+        self.show_tree_panel && self.app.has_tree_panel()
     }
 
     pub fn export_svg(&mut self, path: &Path) -> Result<(), TermalError> {
