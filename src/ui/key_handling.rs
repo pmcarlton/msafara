@@ -277,6 +277,17 @@ fn handle_command(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
                     mode: RejectMode::Matched,
                 };
                 ui.app.info_msg("Reject matched sequences? (y/n)");
+            } else if cmd.trim() == "ur" {
+                match ui.app.undo_last_reject() {
+                    Ok(count) => {
+                        if count == 0 {
+                            ui.app.info_msg("Nothing to undo");
+                        } else {
+                            ui.app.info_msg(format!("Undid {} rejection(s)", count));
+                        }
+                    }
+                    Err(e) => ui.app.error_msg(format!("Undo failed: {}", e)),
+                }
             } else {
                 ui.app.warning_msg(format!("Unknown command: {}", cmd));
             }
@@ -502,21 +513,15 @@ fn perform_reject(ui: &mut UI, mode: RejectMode) {
         ui.app.warning_msg("No sequences to reject");
         return;
     }
-    let mut removed = ui.app.remove_sequences(&ranks);
-    removed.reverse();
-    for (header, seq) in &removed {
-        if let Err(e) = ui.app.append_sequence_fasta(&out_path, header, seq) {
-            ui.app.error_msg(format!("Write failed: {}", e));
-            return;
+    match ui.app.reject_sequences(&ranks, &out_path) {
+        Ok(count) => {
+            ui.app
+                .info_msg(format!("Rejected {} -> {}", count, out_path.display()));
+            if ui.app.alignment.num_seq() == 0 {
+                ui.set_exit_message("all sequences have been rejected, ending program");
+            }
         }
-    }
-    ui.app.info_msg(format!(
-        "Rejected {} -> {}",
-        removed.len(),
-        out_path.display()
-    ));
-    if ui.app.alignment.num_seq() == 0 {
-        ui.set_exit_message("all sequences have been rejected, ending program");
+        Err(e) => ui.app.error_msg(format!("Write failed: {}", e)),
     }
 }
 
@@ -773,18 +778,21 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         KeyCode::Char('!') => {
             if let Some(rank) = ui.app.current_label_match_rank() {
                 let out_path = ui.app.rejected_path();
-                if let Some((header, seq)) = ui.app.remove_sequence(rank) {
-                    if let Err(e) = ui.app.append_sequence_fasta(&out_path, &header, &seq) {
-                        ui.app.error_msg(format!("Write failed: {}", e));
-                    } else {
-                        ui.app
-                            .info_msg(format!("Rejected -> {}", out_path.display()));
-                        if ui.app.alignment.num_seq() == 0 {
-                            ui.set_exit_message("all sequences have been rejected, ending program");
+                match ui.app.reject_sequences(&[rank], &out_path) {
+                    Ok(count) => {
+                        if count == 0 {
+                            ui.app.warning_msg("No current label match");
+                        } else {
+                            ui.app
+                                .info_msg(format!("Rejected -> {}", out_path.display()));
+                            if ui.app.alignment.num_seq() == 0 {
+                                ui.set_exit_message(
+                                    "all sequences have been rejected, ending program",
+                                );
+                            }
                         }
                     }
-                } else {
-                    ui.app.warning_msg("No current label match");
+                    Err(e) => ui.app.error_msg(format!("Write failed: {}", e)),
                 }
             } else {
                 ui.app.warning_msg("No current label match");

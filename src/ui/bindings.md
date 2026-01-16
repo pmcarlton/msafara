@@ -47,6 +47,7 @@ P            : save current search and clear its highlights
 :rc<Ret>     : reject current match (y/n to confirm)
 :ru<Ret>     : reject unmatched sequences (y/n to confirm)
 :rm<Ret>     : reject matched sequences (y/n to confirm)
+:ur<Ret>     : undo last rejection (restores file and sequences)
 
 ## Filtering
 

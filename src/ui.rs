@@ -263,6 +263,10 @@ impl<'a> UI<'a> {
         self.show_tree_panel && self.app.has_tree_panel()
     }
 
+    pub fn num_sequences(&self) -> u16 {
+        self.app.num_seq()
+    }
+
     pub fn export_svg(&mut self, path: &Path) -> Result<(), TermalError> {
         svg::export_current_view(self, path)
     }

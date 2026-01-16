@@ -105,6 +105,20 @@ pub struct SearchState {
     hdr_match_status: Vec<bool>,
 }
 
+#[derive(Clone)]
+struct RemovedSeq {
+    rank: usize,
+    header: String,
+    sequence: String,
+}
+
+struct LastReject {
+    path: PathBuf,
+    backup: Option<PathBuf>,
+    removed: Vec<RemovedSeq>,
+    previous_user_ordering: Option<Vec<String>>,
+}
+
 pub struct SeqSearchState {
     pub kind: SearchKind,
     pub pattern: String,
@@ -267,6 +281,7 @@ pub struct App {
     current_msg: CurrentMessage,
     emboss_bin_dir: Option<PathBuf>,
     mafft_bin_dir: Option<PathBuf>,
+    last_reject: Option<LastReject>,
     filtered_output_path: PathBuf,
     rejected_output_path: PathBuf,
     tree_lines: Vec<String>,
@@ -299,6 +314,7 @@ impl App {
             current_msg: cur_msg,
             emboss_bin_dir: None,
             mafft_bin_dir: None,
+            last_reject: None,
             filtered_output_path,
             rejected_output_path,
             tree_lines: Vec::new(),
@@ -708,6 +724,13 @@ impl App {
     }
 
     pub fn remove_sequences(&mut self, ranks: &[usize]) -> Vec<(String, String)> {
+        self.remove_sequences_with_ranks(ranks)
+            .into_iter()
+            .map(|removed| (removed.header, removed.sequence))
+            .collect()
+    }
+
+    fn remove_sequences_with_ranks(&mut self, ranks: &[usize]) -> Vec<RemovedSeq> {
         if ranks.is_empty() {
             return Vec::new();
         }
@@ -732,12 +755,16 @@ impl App {
             .as_ref()
             .map(|state| state.pattern.clone());
 
-        let mut removed: Vec<(String, String)> = Vec::new();
+        let mut removed: Vec<RemovedSeq> = Vec::new();
         let mut sorted: Vec<usize> = ranks.to_vec();
         sorted.sort_unstable_by(|a, b| b.cmp(a));
         for rank in sorted {
             if let Some(item) = self.alignment.remove_seq(rank) {
-                removed.push(item);
+                removed.push(RemovedSeq {
+                    rank,
+                    header: item.0,
+                    sequence: item.1,
+                });
             }
         }
         header_set.extend(self.alignment.headers.iter().cloned());
@@ -745,6 +772,24 @@ impl App {
             ordering.retain(|hdr| header_set.contains(hdr));
         }
 
+        self.recompute_search_state(
+            current_label_header,
+            current_seq_match,
+            label_search_pattern,
+            seq_search_kind,
+            seq_search_pattern,
+        );
+        removed
+    }
+
+    fn recompute_search_state(
+        &mut self,
+        current_label_header: Option<String>,
+        current_seq_match: Option<(String, (usize, usize))>,
+        label_search_pattern: Option<String>,
+        seq_search_kind: Option<SearchKind>,
+        seq_search_pattern: Option<String>,
+    ) {
         if let Some(pattern) = label_search_pattern {
             match compute_label_search_state(&self.alignment.headers, &pattern) {
                 Ok(mut state) => {
@@ -803,7 +848,143 @@ impl App {
 
         self.refresh_saved_searches();
         self.recompute_ordering();
-        removed
+    }
+
+    pub fn reject_sequences(&mut self, ranks: &[usize], path: &Path) -> Result<usize, TermalError> {
+        if ranks.is_empty() {
+            return Ok(0);
+        }
+        if let Some(last) = &self.last_reject {
+            if let Some(backup) = &last.backup {
+                fs::remove_file(backup).ok();
+            }
+        }
+        let backup = if path.exists() {
+            let stamp = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0);
+            let mut tmp = std::env::temp_dir();
+            tmp.push(format!(
+                "termal-reject-{}-{}.bak",
+                std::process::id(),
+                stamp
+            ));
+            fs::copy(path, &tmp)?;
+            Some(tmp)
+        } else {
+            None
+        };
+        let previous_user_ordering = self.user_ordering.clone();
+        let removed = self.remove_sequences_with_ranks(ranks);
+        if removed.is_empty() {
+            return Ok(0);
+        }
+        let mut removed_sorted = removed.clone();
+        removed_sorted.sort_by_key(|rec| rec.rank);
+        let write_result = (|| -> Result<(), TermalError> {
+            for rec in &removed_sorted {
+                self.append_sequence_fasta(path, &rec.header, &rec.sequence)?;
+            }
+            Ok(())
+        })();
+        if let Err(e) = write_result {
+            if let Some(ref backup_path) = backup {
+                fs::copy(backup_path, path).ok();
+            } else if path.exists() {
+                fs::remove_file(path).ok();
+            }
+            if let Some(prev) = previous_user_ordering.clone() {
+                self.user_ordering = Some(prev);
+            }
+            for rec in &removed_sorted {
+                self.alignment
+                    .insert_seq(rec.rank, rec.header.clone(), rec.sequence.clone());
+            }
+            let current_label_header = self
+                .current_label_match_rank()
+                .and_then(|rank| self.alignment.headers.get(rank))
+                .cloned();
+            let current_seq_match = self.seq_search_state.as_ref().and_then(|state| {
+                let match_entry = state.matches.get(state.current_match).copied();
+                let header =
+                    match_entry.and_then(|m| self.alignment.headers.get(m.seq_index).cloned());
+                let span = match_entry.map(|m| (m.start, m.end));
+                header.zip(span)
+            });
+            let seq_search_kind = self.seq_search_state.as_ref().map(|state| state.kind);
+            let seq_search_pattern = self
+                .seq_search_state
+                .as_ref()
+                .map(|state| state.pattern.clone());
+            let label_search_pattern = self
+                .search_state
+                .as_ref()
+                .map(|state| state.pattern.clone());
+            self.recompute_search_state(
+                current_label_header,
+                current_seq_match,
+                label_search_pattern,
+                seq_search_kind,
+                seq_search_pattern,
+            );
+            return Err(e);
+        }
+        self.last_reject = Some(LastReject {
+            path: path.to_path_buf(),
+            backup,
+            removed: removed_sorted,
+            previous_user_ordering,
+        });
+        Ok(self.last_reject.as_ref().unwrap().removed.len())
+    }
+
+    pub fn undo_last_reject(&mut self) -> Result<usize, TermalError> {
+        let last = self
+            .last_reject
+            .take()
+            .ok_or_else(|| TermalError::Format(String::from("No rejection to undo")))?;
+
+        if let Some(ref backup) = last.backup {
+            fs::copy(backup, &last.path)?;
+            fs::remove_file(backup).ok();
+        } else if last.path.exists() {
+            fs::remove_file(&last.path)?;
+        }
+
+        let current_label_header = self
+            .current_label_match_rank()
+            .and_then(|rank| self.alignment.headers.get(rank))
+            .cloned();
+        let current_seq_match = self.seq_search_state.as_ref().and_then(|state| {
+            let match_entry = state.matches.get(state.current_match).copied();
+            let header = match_entry.and_then(|m| self.alignment.headers.get(m.seq_index).cloned());
+            let span = match_entry.map(|m| (m.start, m.end));
+            header.zip(span)
+        });
+        let seq_search_kind = self.seq_search_state.as_ref().map(|state| state.kind);
+        let seq_search_pattern = self
+            .seq_search_state
+            .as_ref()
+            .map(|state| state.pattern.clone());
+        let label_search_pattern = self
+            .search_state
+            .as_ref()
+            .map(|state| state.pattern.clone());
+
+        for rec in &last.removed {
+            self.alignment
+                .insert_seq(rec.rank, rec.header.clone(), rec.sequence.clone());
+        }
+        self.user_ordering = last.previous_user_ordering;
+        self.recompute_search_state(
+            current_label_header,
+            current_seq_match,
+            label_search_pattern,
+            seq_search_kind,
+            seq_search_pattern,
+        );
+        Ok(last.removed.len())
     }
 
     pub fn write_alignment_fasta(&self, path: &Path) -> Result<(), TermalError> {
@@ -1484,6 +1665,7 @@ mod tests {
         alignment::Alignment,
         app::{order, App, SeqMatch, SeqOrdering},
     };
+    use std::path::PathBuf;
 
     #[test]
     fn test_order_00() {
@@ -1783,6 +1965,36 @@ mod tests {
         app.remove_sequences(&[0]);
         assert_eq!(app.ordering.len(), app.alignment.num_seq());
         assert_eq!(app.reverse_ordering.len(), app.alignment.num_seq());
+    }
+
+    #[test]
+    fn test_undo_reject_restores_ordering_and_file() {
+        let hdrs = vec![String::from("R1"), String::from("R2"), String::from("R3")];
+        let seqs = vec![String::from("AA"), String::from("BB"), String::from("AA")];
+        let aln = Alignment::from_vecs(hdrs, seqs);
+        let mut app = App::new("TEST", aln, None);
+        let mut path = PathBuf::from(std::env::temp_dir());
+        path.push("termal-test-reject.fa");
+        let _ = std::fs::remove_file(&path);
+
+        app.next_ordering_criterion();
+        app.reject_sequences(&[1], &path).unwrap();
+        assert_eq!(app.ordering.len(), app.alignment.num_seq());
+        assert!(path.exists());
+
+        app.undo_last_reject().unwrap();
+        assert_eq!(app.ordering.len(), app.alignment.num_seq());
+        assert!(!path.exists());
+
+        app.regex_search_sequences("AA");
+        app.next_ordering_criterion();
+        app.next_ordering_criterion();
+        app.next_ordering_criterion();
+        app.reject_sequences(&[0], &path).unwrap();
+        assert_eq!(app.ordering.len(), app.alignment.num_seq());
+        app.undo_last_reject().unwrap();
+        assert_eq!(app.ordering.len(), app.alignment.num_seq());
+        let _ = std::fs::remove_file(&path);
     }
 
     #[test]

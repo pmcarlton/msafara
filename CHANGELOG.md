@@ -15,6 +15,7 @@
 * Wishlist document for future enhancements
 * SVG export of the current view (`:es`)
 * MAFFT realignment with guide tree output and tree panel (`:ra`)
+* Undo last rejection (`:ur`) with reject-file rollback
 
 ### Changed
 

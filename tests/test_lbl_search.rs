@@ -282,6 +282,35 @@ fn test_reject_label_match_in_tree_order() {
 }
 
 #[test]
+fn test_reject_and_undo_label_match() {
+    utils::with_rig(
+        "tests/data/test-motion.msa",
+        SCREEN_WIDTH,
+        SCREEN_HEIGHT,
+        |mut ui, terminal| {
+            let before = ui.num_sequences();
+            key_handling::handle_key_press(ui, utils::keypress('"'));
+            key_handling::handle_key_press(ui, utils::keypress('K'));
+            key_handling::handle_key_press(ui, utils::keypress('F'));
+            key_handling::handle_key_press(ui, utils::keypress('J'));
+            key_handling::handle_key_press(ui, KeyCode::Enter.into());
+            key_handling::handle_key_press(ui, utils::keypress('n'));
+            key_handling::handle_key_press(ui, utils::keypress('!'));
+            assert_eq!(ui.num_sequences(), before - 1);
+
+            key_handling::handle_key_press(ui, utils::keypress(':'));
+            key_handling::handle_key_press(ui, utils::keypress('u'));
+            key_handling::handle_key_press(ui, utils::keypress('r'));
+            key_handling::handle_key_press(ui, KeyCode::Enter.into());
+            terminal
+                .draw(|f| render::render_ui(f, &mut ui))
+                .expect("update");
+            assert_eq!(ui.num_sequences(), before);
+        },
+    );
+}
+
+#[test]
 /// Tests that the Del key works as expected
 fn test_label_search_del() {
     utils::with_rig(

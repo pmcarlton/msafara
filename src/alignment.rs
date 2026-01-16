@@ -169,6 +169,28 @@ impl Alignment {
 
         Some((header, sequence))
     }
+
+    pub fn insert_seq(&mut self, index: usize, header: String, sequence: String) {
+        let idx = index.min(self.sequences.len());
+        self.headers.insert(idx, header);
+        self.sequences.insert(idx, sequence);
+        if self.sequences.is_empty() {
+            return;
+        }
+        self.consensus = consensus(&self.sequences);
+        self.entropies = entropies(&self.sequences);
+        self.densities = densities(&self.sequences);
+        self.id_wrt_consensus = self
+            .sequences
+            .iter()
+            .map(|seq| percent_identity(seq, &self.consensus))
+            .collect();
+        self.relative_seq_len = self
+            .sequences
+            .iter()
+            .map(|seq| seq_len_nogaps(seq))
+            .collect();
+    }
 }
 
 // TODO should these be methods of Alignment?
