@@ -242,6 +242,11 @@ impl<'a> UI<'a> {
         self.show_tree_panel = show;
     }
 
+    pub fn set_user_ordering_from_headers(&mut self) -> Result<(), TermalError> {
+        let headers = self.app.alignment.headers.clone();
+        self.app.set_user_ordering(headers)
+    }
+
     pub fn sync_tree_panel_with_ordering(&mut self) {
         if !self.app.has_tree_panel() {
             self.show_tree_panel = false;

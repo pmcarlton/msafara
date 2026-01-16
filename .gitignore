@@ -28,3 +28,4 @@ dist
 *.svg
 backtr*.osx
 backtrace.log
+*.rej01

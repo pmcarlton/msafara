@@ -249,6 +249,39 @@ fn test_missing_label_search() {
 }
 
 #[test]
+fn test_reject_label_match_in_tree_order() {
+    utils::with_rig(
+        "tests/data/test-motion.msa",
+        SCREEN_WIDTH,
+        SCREEN_HEIGHT,
+        |mut ui, terminal| {
+            ui.set_user_ordering_from_headers().unwrap();
+            ui.show_tree_panel(true);
+
+            key_handling::handle_key_press(ui, utils::keypress('"'));
+            key_handling::handle_key_press(ui, utils::keypress('K'));
+            key_handling::handle_key_press(ui, utils::keypress('F'));
+            key_handling::handle_key_press(ui, utils::keypress('J'));
+            key_handling::handle_key_press(ui, KeyCode::Enter.into());
+            key_handling::handle_key_press(ui, utils::keypress('n'));
+            key_handling::handle_key_press(ui, utils::keypress('!'));
+            key_handling::handle_key_press(ui, utils::keypress('n'));
+
+            terminal
+                .draw(|f| render::render_ui(f, &mut ui))
+                .expect("update");
+            let buffer = terminal.backend().buffer();
+            let last_line = utils::screen_line(&buffer, SCREEN_HEIGHT - 1);
+            assert!(
+                last_line.contains("match #") && last_line.contains("/7"),
+                "Expected match count after rejection, got: {}",
+                last_line
+            );
+        },
+    );
+}
+
+#[test]
 /// Tests that the Del key works as expected
 fn test_label_search_del() {
     utils::with_rig(

@@ -1755,6 +1755,37 @@ mod tests {
     }
 
     #[test]
+    fn test_remove_sequences_preserves_ordering_lengths() {
+        let hdrs = vec![
+            String::from("R1"),
+            String::from("R2"),
+            String::from("R3"),
+            String::from("R4"),
+        ];
+        let seqs = vec![
+            String::from("AA"),
+            String::from("BB"),
+            String::from("AA"),
+            String::from("CC"),
+        ];
+        let aln = Alignment::from_vecs(hdrs, seqs);
+        let mut app = App::new("TEST", aln, None);
+
+        app.next_ordering_criterion();
+        app.remove_sequences(&[1]);
+        assert_eq!(app.ordering.len(), app.alignment.num_seq());
+        assert_eq!(app.reverse_ordering.len(), app.alignment.num_seq());
+
+        app.regex_search_sequences("AA");
+        app.next_ordering_criterion();
+        app.next_ordering_criterion();
+        app.next_ordering_criterion();
+        app.remove_sequences(&[0]);
+        assert_eq!(app.ordering.len(), app.alignment.num_seq());
+        assert_eq!(app.reverse_ordering.len(), app.alignment.num_seq());
+    }
+
+    #[test]
     fn test_tree_ordering_maps_header_tokens() {
         let hdrs = vec![String::from("seq 1"), String::from("seq2")];
         let seqs = vec![String::from("AA"), String::from("AA")];
