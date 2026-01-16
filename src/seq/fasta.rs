@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Thomas Junier
 
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
@@ -16,6 +17,7 @@ pub fn read_fasta_file<P: AsRef<Path>>(path: P) -> Result<SeqFile, std::io::Erro
         sequence: String::new(),
     };
     let mut first_header = true;
+    let mut seen_ids: HashSet<String> = HashSet::new();
 
     for line in BufReader::new(file).lines() {
         let l: String = line.unwrap();
@@ -30,7 +32,20 @@ pub fn read_fasta_file<P: AsRef<Path>>(path: P) -> Result<SeqFile, std::io::Erro
                 header: String::new(),
                 sequence: String::new(),
             };
-            current_record.header.push_str(hdr);
+            let id = hdr.split_whitespace().next().unwrap_or("").to_string();
+            if id.is_empty() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "Empty FASTA header",
+                ));
+            }
+            if !seen_ids.insert(id.clone()) {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("Duplicate FASTA ID: {}", id),
+                ));
+            }
+            current_record.header.push_str(&id);
         } else {
             // append line to current record'd sequence
             current_record.sequence.push_str(&l);
@@ -68,10 +83,7 @@ mod tests {
     fn test_read_fasta_file_3() {
         let path = "data/test3.pep";
         let fasta: SeqFile = read_fasta_file(path).expect("Test file not found");
-        assert_eq!(
-            fasta[0].header,
-            "Some larger FastA record, with several lines"
-        );
+        assert_eq!(fasta[0].header, "Some");
         assert_eq!(fasta[0].sequence, "HWYQYDSWSWHQIQDPWVASLMTGSEHNTTIVDLNVLGAMDCLWLCYCQPECFEVFSLCIEVDLPSCCWAKALCAFHMWDSMAKQCWMPEMGEVSYFYALSMFHYFLLHSRPIQPWQTHHIPYDSIVVDLIANYFYNMIVQDVDKNSNIRFDRSVMRDVMIYEFENTYATGVVFNVNGKCGQFCKNMIYVGTIETQKEYEMFKNLDCAVQKRHNLQPNCENIAMKMRIQYNGKRFRMDYWERYRCNDIKQVLPQPFTEVAMEHRTFKLWPTTRLMMSNPKCRQCLEWAAVETGWIFTTNF");
     }
 }

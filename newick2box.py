@@ -123,29 +123,81 @@ def render_box_tree(root, node_map: Dict[int, NodeInfo], leaves: List[Tuple[int,
     grid: List[List[str]] = [[" " for _ in range(label_col)] for _ in range(n_rows)]
 
     def put(y: int, x: int, ch: str):
-        if 0 <= y < n_rows and 0 <= x < len(grid[y]):
-            existing = grid[y][x]
-            if existing == " ":
-                grid[y][x] = ch
-                return
+        if not (0 <= y < n_rows and 0 <= x < len(grid[y])):
+            return
 
-            # Preserve junction/corner glyphs over plain strokes.
-            if existing in {"┌", "└", "├", "┼"}:
-                return
-            if ch in {"┌", "└", "├", "┼"}:
-                grid[y][x] = ch
-                return
+        left = grid[y][x - 1] if x > 0 else None
+        existing = grid[y][x]
 
-            # Merge crossings of vertical/horizontal.
-            merges = {
-                frozenset({"│", "─"}): "┼",
-                frozenset({"│", "┼"}): "┼",
-                frozenset({"─", "┼"}): "┼",
-            }
-            merged = merges.get(frozenset({existing, ch}))
-            if merged:
-                grid[y][x] = merged
-            # else: keep existing
+        # If there's a horizontal stroke immediately to the left, prefer glyphs that
+        # explicitly include a left-connection.
+        if left == "─":
+            if ch == "│":
+                ch = "┤"   # left + vertical (no implied right branch)
+            elif ch == "┌":
+                ch = "┬"   # left + right + down (top tee)
+            elif ch == "└":
+                ch = "┴"   # left + right + up (bottom tee)
+            elif ch == "├":
+                ch = "┼"   # because ├ already implies a right branch; with left, it's a cross
+
+        if existing == " ":
+            grid[y][x] = ch
+            return
+
+        # Strongest junctions win
+        strength = {" ": 0, "─": 1, "│": 1, "┤": 2, "┌": 2, "└": 2, "├": 2, "┬": 3, "┴": 3, "┼": 4}
+        if strength.get(ch, 0) > strength.get(existing, 0):
+            grid[y][x] = ch
+            existing = ch
+
+        # Merge rules at the same cell (true crossings/tees)
+        # If both horizontal and vertical are present, we need at least ┤, and possibly ┼.
+        if (existing == "─" and ch in {"│", "┤"}) or (existing in {"│", "┤"} and ch == "─"):
+            # If we already have left-joining vertical, adding horizontal implies both-sides horizontal
+            # at that coordinate (i.e. a real cross).
+            if existing == "┤" or ch == "┤":
+                grid[y][x] = "┼"
+            else:
+                # plain vertical + horizontal at same cell: cross
+                grid[y][x] = "┼"
+            return
+
+        # If we have ┤ and later we add │ (or vice versa), keep ┤
+        if {existing, ch} == {"│", "┤"}:
+            grid[y][x] = "┤"
+            return
+
+        # If we have ┬/┴ and later add vertical through, upgrade to ┼
+        if existing in {"┬", "┴"} and ch == "│":
+            grid[y][x] = "┼"
+            return
+
+
+#     def put(y: int, x: int, ch: str):
+        # if 0 <= y < n_rows and 0 <= x < len(grid[y]):
+            # existing = grid[y][x]
+            # if existing == " ":
+                # grid[y][x] = ch
+                # return
+
+            # # Preserve junction/corner glyphs over plain strokes.
+            # if existing in {"┌", "└", "├", "┼"}:
+                # return
+            # if ch in {"┌", "└", "├", "┼"}:
+                # grid[y][x] = ch
+                # return
+
+            # # Merge crossings of vertical/horizontal.
+            # merges = {
+                # frozenset({"│", "─"}): "┼",
+                # frozenset({"│", "┼"}): "┼",
+                # frozenset({"─", "┼"}): "┼",
+            # }
+            # merged = merges.get(frozenset({existing, ch}))
+            # if merged:
+                # grid[y][x] = merged
+            # # else: keep existing
 
     def draw_internal(clade):
         info = node_map[id(clade)]

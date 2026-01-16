@@ -25,6 +25,7 @@
 * Current search highlight is dimmer; gap characters use half-intensity
 * SVG export renders highlighted sequence matches in bold text
 * Tree panel auto-hides for non-tree ordering modes and auto-shows for tree order
+* FASTA headers now use the ID token (first whitespace-delimited field)
 
 ### Fixed
 
@@ -33,6 +34,7 @@
 * Tree panel no longer leaves trailing padding before the label pane
 * Tree panel width now counts Unicode box characters correctly
 * Tree panel junctions now join horizontal segments with right-facing glyphs
+* Duplicate FASTA IDs are now rejected early with a clear error
 * Rejecting all sequences now exits cleanly with a message
 * SVG export overwrite confirmation now restores the prompt flow
 * MAFFT tree leaf names now map to headers with spaces/dots normalized and numeric prefixes stripped
