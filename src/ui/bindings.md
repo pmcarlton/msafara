@@ -71,6 +71,10 @@ s,S: next/previous color scheme
 m,M: next/previous color map
 i: toggle inverse/direct video
 
+## Notes
+
+@: open notes editor (Esc to close; Ctrl-A/Ctrl-E line start/end; Ctrl-B/Ctrl-F word left/right)
+
 Monochrome direct video is the default.
 
 ## Metrics and Orderings

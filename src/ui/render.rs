@@ -774,6 +774,50 @@ fn render_session_list_dialog(f: &mut Frame, dialog_chunk: Rect, ui: &UI) {
     f.render_widget(dialog_para, dialog_chunk);
 }
 
+fn render_notes_dialog(f: &mut Frame, dialog_chunk: Rect, ui: &UI) {
+    let dialog_block = Block::default().borders(Borders::ALL).title("Notes");
+    let Some(editor) = ui.notes_state() else {
+        return;
+    };
+
+    let max_width = dialog_chunk.width.saturating_sub(2);
+    let max_height = dialog_chunk.height.saturating_sub(2);
+    let width = max_width.min(40).max(1);
+    let height = max_height.min(10).max(1);
+    let x = dialog_chunk.x + (dialog_chunk.width.saturating_sub(width + 2)) / 2;
+    let y = dialog_chunk.y + (dialog_chunk.height.saturating_sub(height + 2)) / 2;
+    let notes_chunk = Rect {
+        x,
+        y,
+        width: width + 2,
+        height: height + 2,
+    };
+
+    let mut editor = editor.clone();
+    editor.ensure_visible(height as usize);
+    let start = editor.scroll();
+
+    let mut lines: Vec<Line> = Vec::new();
+    for line in editor.lines().iter().skip(start).take(height as usize) {
+        let mut text = line.clone();
+        if text.len() > width as usize {
+            text.truncate(width as usize);
+        }
+        lines.push(Line::from(text));
+    }
+    while lines.len() < height as usize {
+        lines.push(Line::from(""));
+    }
+
+    let para = Paragraph::new(Text::from(lines)).block(dialog_block);
+    f.render_widget(Clear, notes_chunk);
+    f.render_widget(para, notes_chunk);
+
+    let cursor_x = editor.col().min(width as usize) as u16;
+    let cursor_y = editor.row().saturating_sub(start).min(height as usize - 1) as u16;
+    f.set_cursor_position((notes_chunk.x + 1 + cursor_x, notes_chunk.y + 1 + cursor_y));
+}
+
 pub fn render_ui(f: &mut Frame, ui: &mut UI) {
     ui.sync_tree_panel_with_ordering();
     let layout_panes = make_layout(f, ui);
@@ -836,6 +880,10 @@ pub fn render_ui(f: &mut Frame, ui: &mut UI) {
 
     if let InputMode::SessionList { .. } = ui.input_mode {
         render_session_list_dialog(f, layout_panes.dialog, ui);
+    }
+
+    if let InputMode::Notes { .. } = ui.input_mode {
+        render_notes_dialog(f, layout_panes.dialog, ui);
     }
 }
 

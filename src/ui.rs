@@ -7,6 +7,7 @@ mod color_scheme;
 pub mod key_handling;
 mod line_editor;
 mod msg_theme;
+mod notes_editor;
 pub mod render;
 mod style;
 mod svg;
@@ -29,6 +30,7 @@ use self::{
     color_map::colormap_gecos,
     color_scheme::{ColorScheme, Theme},
     line_editor::LineEditor,
+    notes_editor::NotesEditor,
 };
 
 use crate::{
@@ -96,6 +98,9 @@ enum InputMode {
     SessionList {
         selected: usize,
         files: Vec<String>,
+    },
+    Notes {
+        editor: NotesEditor,
     },
     ConfirmReject {
         mode: RejectMode,
@@ -724,6 +729,13 @@ impl<'a> UI<'a> {
     pub fn session_list_state(&self) -> Option<(usize, &[String])> {
         match &self.input_mode {
             InputMode::SessionList { selected, files } => Some((*selected, files.as_slice())),
+            _ => None,
+        }
+    }
+
+    pub fn notes_state(&self) -> Option<&NotesEditor> {
+        match &self.input_mode {
+            InputMode::Notes { editor } => Some(editor),
             _ => None,
         }
     }

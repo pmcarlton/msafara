@@ -9,7 +9,7 @@ use super::{
     InputMode,
     InputMode::{
         Command, ConfirmOverwrite, ConfirmReject, ConfirmSessionOverwrite, ExportSvg, Help,
-        LabelSearch, Normal, PendingCount, Search, SearchList, SessionList, SessionSave,
+        LabelSearch, Normal, Notes, PendingCount, Search, SearchList, SessionList, SessionSave,
     },
     //SearchDirection,
     {RejectMode, ZoomLevel, UI},
@@ -17,6 +17,79 @@ use super::{
 use crate::app::SearchKind;
 use std::collections::HashSet;
 
+fn handle_notes(ui: &mut UI, key_event: KeyEvent, mut editor: super::notes_editor::NotesEditor) {
+    match key_event.code {
+        KeyCode::Esc => {
+            ui.app.set_notes(editor.text());
+            ui.input_mode = InputMode::Normal;
+            ui.app.clear_msg();
+        }
+        KeyCode::Enter => {
+            editor.newline();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Backspace => {
+            editor.backspace();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Char('m') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+            editor.newline();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Char(c)
+            if (c.is_ascii_graphic() || c == ' ')
+                && !key_event.modifiers.contains(KeyModifiers::CONTROL) =>
+        {
+            editor.insert_char(c);
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Left if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+            editor.move_word_left();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Right if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+            editor.move_word_right();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Left => {
+            editor.move_left();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Right => {
+            editor.move_right();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Up => {
+            editor.move_up();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Down => {
+            editor.move_down();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Char('w') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+            editor.delete_word_left();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Char('a') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+            editor.move_line_start();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Char('e') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+            editor.move_line_end();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Char('b') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+            editor.move_word_left();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        KeyCode::Char('f') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+            editor.move_word_right();
+            ui.input_mode = InputMode::Notes { editor };
+        }
+        _ => {}
+    }
+}
 pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
     let mut done = false;
     let mode = ui.input_mode.clone();
@@ -35,6 +108,7 @@ pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
         }
         SearchList { selected } => handle_search_list(ui, key_event, selected),
         SessionList { selected, files } => handle_session_list(ui, key_event, selected, &files),
+        Notes { editor } => handle_notes(ui, key_event, editor),
         ConfirmReject { mode } => handle_confirm_reject(ui, key_event, mode),
     };
     if ui.has_exit_message() {
@@ -701,6 +775,7 @@ fn handle_session_list(ui: &mut UI, key_event: KeyEvent, mut selected: usize, fi
         _ => {}
     }
 }
+
 fn handle_confirm_overwrite(ui: &mut UI, key_event: KeyEvent, editor: LineEditor, path: String) {
     match key_event.code {
         KeyCode::Char('y') | KeyCode::Char('Y') => {
@@ -1058,6 +1133,10 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
                 editor: LineEditor::new(),
             };
             ui.app.argument_msg(String::from(":"), String::from(""));
+        }
+        KeyCode::Char('@') => {
+            let editor = super::notes_editor::NotesEditor::new(ui.app.notes());
+            ui.input_mode = InputMode::Notes { editor };
         }
 
         _ => {

@@ -137,6 +137,7 @@ Other
 
 * Q,q    : quit
 * ?      : help
+* @      : notes editor (Esc to close; Ctrl-A/Ctrl-E line start/end; Ctrl-B/Ctrl-F word left/right)
 
 Searching
 ---------

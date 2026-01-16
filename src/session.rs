@@ -15,6 +15,7 @@ pub struct SessionFile {
     pub saved_searches: Vec<SessionSearchEntry>,
     pub current_search: Option<SessionCurrentSearch>,
     pub label_search: Option<SessionLabelSearch>,
+    pub notes: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

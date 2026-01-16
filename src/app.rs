@@ -286,6 +286,7 @@ pub struct App {
     emboss_bin_dir: Option<PathBuf>,
     mafft_bin_dir: Option<PathBuf>,
     last_reject: Option<LastReject>,
+    notes: String,
     filtered_output_path: PathBuf,
     rejected_output_path: PathBuf,
     tree_lines: Vec<String>,
@@ -333,6 +334,7 @@ impl App {
             emboss_bin_dir: None,
             mafft_bin_dir: None,
             last_reject: None,
+            notes: String::new(),
             filtered_output_path,
             rejected_output_path,
             tree_lines: Vec::new(),
@@ -436,6 +438,11 @@ impl App {
             saved_searches,
             current_search,
             label_search,
+            notes: if self.notes.is_empty() {
+                None
+            } else {
+                Some(self.notes.clone())
+            },
         }
     }
 
@@ -517,6 +524,8 @@ impl App {
                 }
             }
         }
+
+        self.notes = session.notes.unwrap_or_default();
 
         self.current_msg = CurrentMessage {
             prefix: String::new(),
@@ -1387,6 +1396,14 @@ impl App {
         self.refresh_saved_searches();
     }
 
+    pub fn notes(&self) -> &str {
+        &self.notes
+    }
+
+    pub fn set_notes(&mut self, notes: String) {
+        self.notes = notes;
+    }
+
     // Messages
 
     pub fn current_message(&self) -> &CurrentMessage {
@@ -2247,6 +2264,7 @@ mod tests {
         let mut app = App::new("TEST", aln, None);
         app.tree_lines = vec![String::from("root")];
         app.tree_panel_width = 4;
+        app.set_notes(String::from("Session notes"));
         app.add_saved_search_with_kind(
             String::from("motif"),
             String::from("AA"),
@@ -2265,6 +2283,7 @@ mod tests {
         assert_eq!(loaded.tree_lines.len(), 1);
         assert_eq!(loaded.saved_searches().len(), 1);
         assert_eq!(loaded.current_seq_search_pattern(), Some("AA"));
+        assert_eq!(loaded.notes(), "Session notes");
         let _ = std::fs::remove_file(&path);
     }
 
