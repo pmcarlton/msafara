@@ -146,7 +146,7 @@ Searching
 * !            : reject current header match (remove from view, append to rejected<file>)
 * /regexp<Ret> : search sequences
 * \\pattern<Ret> : search sequences (EMBOSS fuzzpro/fuzznuc; optional leading "N " sets -pmis)
-* n,p          : next / previous sequence match (current match underlined)
+* [,]          : previous / next sequence match (current match underlined)
 * P            : save current sequence search and clear its highlights
 
 Extended commands (:)
@@ -159,6 +159,11 @@ Extended commands (:)
 * :rc<Ret>     : reject current match (y/n to confirm)
 * :ru<Ret>     : reject unmatched sequences (y/n to confirm)
 * :rm<Ret>     : reject matched sequences (y/n to confirm)
+* :ur<Ret>     : undo last rejection (restores file and sequences)
+* :sn<Ret>     : select header by displayed number (e.g., :sn 31)
+* :rn<Ret>     : reject by displayed number(s) (e.g., :rn 1,4,6-8)
+* :ss<Ret>     : save session to .trml (prompted, with overwrite confirmation)
+* :sl<Ret>     : load session from .trml (choose from list)
 
 Filtering
 ---------
@@ -171,6 +176,8 @@ OPTIONS
 `-h, --help`
 
 : Show the help message and exit successfully
+
+You can also pass a `.trml` session file as the alignment argument to restore a saved session.
 
 
 `-i, --info`

@@ -17,6 +17,7 @@
 * MAFFT realignment with guide tree output and tree panel (`:ra`)
 * Undo last rejection (`:ur`) with reject-file rollback
 * Separate header/sequence match navigation (`n/p` vs `[`/`]`) and numbered selection/rejection (`:sn`, `:rn`)
+* Session save/load with .trml files (`:ss`, `:sl`)
 
 ### Changed
 

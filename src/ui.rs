@@ -83,8 +83,19 @@ enum InputMode {
         editor: LineEditor,
         path: String,
     },
+    SessionSave {
+        editor: LineEditor,
+    },
+    ConfirmSessionOverwrite {
+        editor: LineEditor,
+        path: String,
+    },
     SearchList {
         selected: usize,
+    },
+    SessionList {
+        selected: usize,
+        files: Vec<String>,
     },
     ConfirmReject {
         mode: RejectMode,
@@ -661,6 +672,14 @@ impl<'a> UI<'a> {
         }
     }
 
+    pub fn session_save_text(&self) -> String {
+        match &self.input_mode {
+            InputMode::SessionSave { editor } => editor.text(),
+            InputMode::ConfirmSessionOverwrite { editor, .. } => editor.text(),
+            _ => String::new(),
+        }
+    }
+
     pub fn search_highlights(&self) -> (Vec<SearchHighlight<'_>>, SearchHighlightConfig) {
         let mut highlights: Vec<SearchHighlight> = Vec::new();
         let config = self.app.search_color_config();
@@ -698,6 +717,13 @@ impl<'a> UI<'a> {
     pub fn search_list_selected(&self) -> Option<usize> {
         match self.input_mode {
             InputMode::SearchList { selected } => Some(selected),
+            _ => None,
+        }
+    }
+
+    pub fn session_list_state(&self) -> Option<(usize, &[String])> {
+        match &self.input_mode {
+            InputMode::SessionList { selected, files } => Some((*selected, files.as_slice())),
             _ => None,
         }
     }

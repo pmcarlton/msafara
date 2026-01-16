@@ -745,6 +745,35 @@ fn render_search_list_dialog(f: &mut Frame, dialog_chunk: Rect, ui: &UI) {
     f.render_widget(dialog_para, dialog_chunk);
 }
 
+fn render_session_list_dialog(f: &mut Frame, dialog_chunk: Rect, ui: &UI) {
+    let dialog_block = Block::default().borders(Borders::ALL).title("Sessions");
+    let Some((selected, files)) = ui.session_list_state() else {
+        return;
+    };
+
+    let mut lines: Vec<Line> = Vec::new();
+    lines.push(Line::from("File"));
+    lines.push(Line::from("----"));
+    for (idx, name) in files.iter().enumerate() {
+        let style = if idx == selected {
+            Style::default().add_modifier(Modifier::REVERSED)
+        } else {
+            Style::default()
+        };
+        lines.push(Line::styled(name.clone(), style));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(
+        "Up/Down to select, Enter to load, Esc to cancel.",
+    ));
+
+    let dialog_para = Paragraph::new(Text::from(lines))
+        .block(dialog_block)
+        .style(Style::default());
+    f.render_widget(Clear, dialog_chunk);
+    f.render_widget(dialog_para, dialog_chunk);
+}
+
 pub fn render_ui(f: &mut Frame, ui: &mut UI) {
     ui.sync_tree_panel_with_ordering();
     let layout_panes = make_layout(f, ui);
@@ -803,6 +832,10 @@ pub fn render_ui(f: &mut Frame, ui: &mut UI) {
 
     if let InputMode::SearchList { .. } = ui.input_mode {
         render_search_list_dialog(f, layout_panes.dialog, ui);
+    }
+
+    if let InputMode::SessionList { .. } = ui.input_mode {
+        render_session_list_dialog(f, layout_panes.dialog, ui);
     }
 }
 

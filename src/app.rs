@@ -19,6 +19,10 @@ use crate::{
     app::SeqOrdering::{MetricDecr, MetricIncr, SearchMatch, SourceFile, User},
     errors::TermalError,
     seq::fasta::read_fasta_file,
+    session::{
+        SessionCurrentSearch, SessionFile, SessionLabelSearch, SessionSearchEntry,
+        SessionSearchKind,
+    },
     tree::{parse_newick, tree_lines_and_order},
 };
 
@@ -289,6 +293,20 @@ pub struct App {
 }
 
 impl App {
+    pub fn from_session_file(path: &Path) -> Result<Self, TermalError> {
+        let contents = fs::read_to_string(path)?;
+        let session: SessionFile = serde_json::from_str(&contents)
+            .map_err(|e| TermalError::Format(format!("Invalid session JSON: {}", e)))?;
+        let filename = if session.source_filename.is_empty() {
+            path.to_string_lossy().to_string()
+        } else {
+            session.source_filename.clone()
+        };
+        let alignment = Alignment::from_vecs(session.headers.clone(), session.sequences.clone());
+        let mut app = App::new(&filename, alignment, None);
+        app.apply_session(session, filename)?;
+        Ok(app)
+    }
     pub fn new(path: &str, alignment: Alignment, usr_ord: Option<Vec<String>>) -> Self {
         let len = alignment.num_seq();
         let cur_msg = CurrentMessage {
@@ -331,6 +349,181 @@ impl App {
 
     pub fn aln_len(&self) -> u16 {
         self.alignment.aln_len().try_into().unwrap()
+    }
+
+    fn ordered_headers_sequences(&self) -> Vec<(String, String)> {
+        self.ordering
+            .iter()
+            .filter_map(|&rank| {
+                let header = self.alignment.headers.get(rank)?;
+                let seq = self.alignment.sequences.get(rank)?;
+                Some((header.clone(), seq.clone()))
+            })
+            .collect()
+    }
+
+    pub fn default_session_path(&self) -> PathBuf {
+        let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        let file_name = Path::new(&self.filename)
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or(self.filename.as_str());
+        let stem = Path::new(file_name)
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or(file_name);
+        cwd.join(format!("{}.trml", stem))
+    }
+
+    pub fn save_session(&self, path: &Path) -> Result<(), TermalError> {
+        let session = self.to_session_file();
+        let json = serde_json::to_string_pretty(&session)
+            .map_err(|e| TermalError::Format(format!("Invalid session JSON: {}", e)))?;
+        fs::write(path, json)?;
+        Ok(())
+    }
+
+    pub fn load_session(&mut self, path: &Path) -> Result<(), TermalError> {
+        let contents = fs::read_to_string(path)?;
+        let session: SessionFile = serde_json::from_str(&contents)
+            .map_err(|e| TermalError::Format(format!("Invalid session JSON: {}", e)))?;
+        let filename = if session.source_filename.is_empty() {
+            path.to_string_lossy().to_string()
+        } else {
+            session.source_filename.clone()
+        };
+        self.apply_session(session, filename)?;
+        Ok(())
+    }
+
+    fn to_session_file(&self) -> SessionFile {
+        let ordered = self.ordered_headers_sequences();
+        let (headers, sequences): (Vec<String>, Vec<String>) = ordered.into_iter().unzip();
+        let saved_searches = self
+            .saved_searches()
+            .iter()
+            .map(|entry| SessionSearchEntry {
+                id: entry.id,
+                name: entry.name.clone(),
+                query: entry.query.clone(),
+                kind: SessionSearchKind::from(entry.kind),
+                enabled: entry.enabled,
+                color: entry.color,
+            })
+            .collect();
+        let current_search = self
+            .seq_search_state
+            .as_ref()
+            .map(|state| SessionCurrentSearch {
+                kind: SessionSearchKind::from(state.kind),
+                pattern: state.pattern.clone(),
+                current_match: Some(state.current_match),
+            });
+        let label_search = self.search_state.as_ref().map(|state| SessionLabelSearch {
+            pattern: state.pattern.clone(),
+            current: Some(state.current),
+        });
+        SessionFile {
+            version: 1,
+            source_filename: self.filename.clone(),
+            headers,
+            sequences,
+            tree_lines: if self.tree_lines.is_empty() {
+                None
+            } else {
+                Some(self.tree_lines.clone())
+            },
+            saved_searches,
+            current_search,
+            label_search,
+        }
+    }
+
+    fn apply_session(&mut self, session: SessionFile, filename: String) -> Result<(), TermalError> {
+        self.filename = filename;
+        self.alignment = Alignment::from_vecs(session.headers, session.sequences);
+        self.ordering_criterion = SourceFile;
+        let len = self.alignment.num_seq();
+        self.ordering = (0..len).collect();
+        self.reverse_ordering = (0..len).collect();
+        self.user_ordering = None;
+        self.last_reject = None;
+
+        self.tree_lines = session.tree_lines.unwrap_or_default();
+        self.tree_panel_width = self
+            .tree_lines
+            .iter()
+            .map(|line| line.chars().count())
+            .max()
+            .unwrap_or(0)
+            .min(u16::MAX as usize) as u16;
+        if !self.tree_lines.is_empty() {
+            self.user_ordering = Some(self.alignment.headers.clone());
+        }
+
+        self.search_registry = SearchRegistry::new(self.search_color_config.palette.clone());
+        let sequences = self.alignment.sequences.clone();
+        for entry in session.saved_searches {
+            let spans_by_seq = match SearchKind::from(entry.kind) {
+                SearchKind::Regex => {
+                    compute_seq_search_state(&sequences, &entry.query, SearchKind::Regex)
+                        .map(|state| state.spans_by_seq)
+                        .unwrap_or_else(|_| vec![Vec::new(); sequences.len()])
+                }
+                SearchKind::Emboss => compute_emboss_search_state(
+                    &self.alignment.headers,
+                    &sequences,
+                    &entry.query,
+                    self.emboss_bin_dir.as_deref(),
+                )
+                .map(|state| state.spans_by_seq)
+                .unwrap_or_else(|_| vec![Vec::new(); sequences.len()]),
+            };
+            self.search_registry.searches.push(SearchEntry {
+                id: entry.id,
+                name: entry.name,
+                query: entry.query,
+                kind: SearchKind::from(entry.kind),
+                enabled: entry.enabled,
+                color: entry.color,
+                spans_by_seq,
+            });
+        }
+        self.search_registry.next_color_index = self.search_registry.searches.len();
+
+        self.seq_search_state = None;
+        if let Some(current) = session.current_search {
+            match SearchKind::from(current.kind) {
+                SearchKind::Regex => self.regex_search_sequences(&current.pattern),
+                SearchKind::Emboss => self.emboss_search_sequences(&current.pattern),
+            }
+            if let Some(state) = &mut self.seq_search_state {
+                if let Some(idx) = current.current_match {
+                    if idx < state.matches.len() {
+                        state.current_match = idx;
+                    }
+                }
+            }
+        }
+
+        self.search_state = None;
+        if let Some(label) = session.label_search {
+            self.regex_search_labels(&label.pattern);
+            if let Some(state) = &mut self.search_state {
+                if let Some(idx) = label.current {
+                    if idx < state.match_linenums.len() {
+                        state.current = idx;
+                    }
+                }
+            }
+        }
+
+        self.current_msg = CurrentMessage {
+            prefix: String::new(),
+            message: String::new(),
+            kind: MessageKind::Info,
+        };
+        Ok(())
     }
 
     fn recompute_ordering(&mut self) {
@@ -1190,6 +1383,10 @@ impl App {
         }
     }
 
+    pub fn refresh_saved_searches_public(&mut self) {
+        self.refresh_saved_searches();
+    }
+
     // Messages
 
     pub fn current_message(&self) -> &CurrentMessage {
@@ -1210,6 +1407,22 @@ impl App {
             message: msg.into(),
             kind: MessageKind::Info,
         };
+    }
+
+    pub fn recompute_current_seq_search(&mut self) {
+        let (kind, pattern, current) = match &self.seq_search_state {
+            Some(state) => (state.kind, state.pattern.clone(), state.current_match),
+            None => return,
+        };
+        match kind {
+            SearchKind::Regex => self.regex_search_sequences(&pattern),
+            SearchKind::Emboss => self.emboss_search_sequences(&pattern),
+        }
+        if let Some(state) = &mut self.seq_search_state {
+            if current < state.matches.len() {
+                state.current_match = current;
+            }
+        }
     }
 
     pub fn warning_msg(&mut self, msg: impl Into<String>) {
@@ -1681,7 +1894,7 @@ mod tests {
 
     use crate::{
         alignment::Alignment,
-        app::{order, App, SeqMatch, SeqOrdering},
+        app::{order, App, SearchKind, SeqMatch, SeqOrdering},
     };
     use std::path::PathBuf;
 
@@ -2023,6 +2236,35 @@ mod tests {
         assert_eq!(app.ordering.len(), app.alignment.num_seq());
         app.undo_last_reject().unwrap();
         assert_eq!(app.ordering.len(), app.alignment.num_seq());
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn test_session_save_and_load() {
+        let hdrs = vec![String::from("R1"), String::from("R2"), String::from("R3")];
+        let seqs = vec![String::from("AA"), String::from("BB"), String::from("AA")];
+        let aln = Alignment::from_vecs(hdrs, seqs);
+        let mut app = App::new("TEST", aln, None);
+        app.tree_lines = vec![String::from("root")];
+        app.tree_panel_width = 4;
+        app.add_saved_search_with_kind(
+            String::from("motif"),
+            String::from("AA"),
+            SearchKind::Regex,
+        )
+        .unwrap();
+        app.regex_search_sequences("AA");
+
+        let mut path = PathBuf::from(std::env::temp_dir());
+        path.push("termal-test-session.trml");
+        let _ = std::fs::remove_file(&path);
+        app.save_session(&path).unwrap();
+
+        let loaded = App::from_session_file(&path).unwrap();
+        assert_eq!(loaded.alignment.headers.len(), 3);
+        assert_eq!(loaded.tree_lines.len(), 1);
+        assert_eq!(loaded.saved_searches().len(), 1);
+        assert_eq!(loaded.current_seq_search_pattern(), Some("AA"));
         let _ = std::fs::remove_file(&path);
     }
 

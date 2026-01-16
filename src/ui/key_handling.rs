@@ -2,13 +2,14 @@
 //
 // Copyright (c) 2025 Thomas Junier
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use std::fs;
 
 use super::{
     line_editor::LineEditor,
     InputMode,
     InputMode::{
-        Command, ConfirmOverwrite, ConfirmReject, ExportSvg, Help, LabelSearch, Normal,
-        PendingCount, Search, SearchList,
+        Command, ConfirmOverwrite, ConfirmReject, ConfirmSessionOverwrite, ExportSvg, Help,
+        LabelSearch, Normal, PendingCount, Search, SearchList, SessionList, SessionSave,
     },
     //SearchDirection,
     {RejectMode, ZoomLevel, UI},
@@ -28,7 +29,12 @@ pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
         Command { editor } => handle_command(ui, key_event, editor),
         ExportSvg { editor } => handle_export_svg(ui, key_event, editor),
         ConfirmOverwrite { editor, path } => handle_confirm_overwrite(ui, key_event, editor, path),
+        SessionSave { editor } => handle_session_save(ui, key_event, editor),
+        ConfirmSessionOverwrite { editor, path } => {
+            handle_confirm_session_overwrite(ui, key_event, editor, path)
+        }
         SearchList { selected } => handle_search_list(ui, key_event, selected),
+        SessionList { selected, files } => handle_session_list(ui, key_event, selected, &files),
         ConfirmReject { mode } => handle_confirm_reject(ui, key_event, mode),
     };
     if ui.has_exit_message() {
@@ -348,6 +354,41 @@ fn handle_command(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
                     }
                     Err(e) => ui.app.error_msg(format!("Undo failed: {}", e)),
                 }
+            } else if cmd.trim() == "ss" {
+                let default_path = ui.app.default_session_path();
+                let mut editor = LineEditor::new();
+                for c in default_path.to_string_lossy().chars() {
+                    editor.insert_char(c);
+                }
+                ui.input_mode = InputMode::SessionSave { editor };
+                ui.app
+                    .argument_msg(String::from("Session: "), ui.session_save_text());
+            } else if cmd.trim() == "sl" {
+                let read_dir = match fs::read_dir(".") {
+                    Ok(read_dir) => read_dir,
+                    Err(e) => {
+                        ui.app.error_msg(format!("Session list failed: {}", e));
+                        return;
+                    }
+                };
+                let mut files: Vec<String> = read_dir
+                    .filter_map(|entry| entry.ok())
+                    .filter_map(|entry| {
+                        let path = entry.path();
+                        let name = path.file_name()?.to_string_lossy().to_string();
+                        if path.extension().and_then(|s| s.to_str()) == Some("trml") {
+                            Some(name)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                files.sort();
+                if files.is_empty() {
+                    ui.app.warning_msg("No .trml files found");
+                } else {
+                    ui.input_mode = InputMode::SessionList { selected: 0, files };
+                }
             } else if cmd.trim_start().starts_with("sn") {
                 let arg = cmd.trim_start()[2..].trim();
                 match arg.parse::<usize>() {
@@ -544,6 +585,122 @@ fn handle_export_svg(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
     }
 }
 
+fn handle_session_save(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
+    match key_event.code {
+        KeyCode::Esc => {
+            ui.input_mode = InputMode::Normal;
+            ui.app.clear_msg();
+        }
+        KeyCode::Enter => {
+            let path = editor.text();
+            if path.is_empty() {
+                ui.app.warning_msg("No filename supplied");
+                return;
+            }
+            if std::path::Path::new(&path).exists() {
+                ui.input_mode = InputMode::ConfirmSessionOverwrite { editor, path };
+                ui.app.argument_msg(
+                    String::from("File exists. Overwrite? (y/n) "),
+                    String::new(),
+                );
+            } else {
+                match ui.app.save_session(std::path::Path::new(&path)) {
+                    Ok(_) => ui.app.info_msg(format!("Session saved -> {}", path)),
+                    Err(e) => ui.app.error_msg(format!("Save failed: {}", e)),
+                }
+                ui.input_mode = InputMode::Normal;
+            }
+        }
+        KeyCode::Char(c) if c.is_ascii_graphic() || c == ' ' => {
+            editor.insert_char(c);
+            ui.input_mode = InputMode::SessionSave { editor };
+            ui.app
+                .argument_msg(String::from("Session: "), ui.session_save_text());
+        }
+        KeyCode::Backspace => {
+            editor.backspace();
+            ui.input_mode = InputMode::SessionSave { editor };
+            ui.app
+                .argument_msg(String::from("Session: "), ui.session_save_text());
+        }
+        KeyCode::Left => {
+            editor.move_left();
+            ui.input_mode = InputMode::SessionSave { editor };
+        }
+        KeyCode::Right => {
+            editor.move_right();
+            ui.input_mode = InputMode::SessionSave { editor };
+        }
+        KeyCode::Home => {
+            editor.move_home();
+            ui.input_mode = InputMode::SessionSave { editor };
+        }
+        KeyCode::End => {
+            editor.move_end();
+            ui.input_mode = InputMode::SessionSave { editor };
+        }
+        _ => {}
+    }
+}
+
+fn handle_confirm_session_overwrite(
+    ui: &mut UI,
+    key_event: KeyEvent,
+    editor: LineEditor,
+    path: String,
+) {
+    match key_event.code {
+        KeyCode::Char('y') | KeyCode::Char('Y') => {
+            match ui.app.save_session(std::path::Path::new(&path)) {
+                Ok(_) => ui.app.info_msg(format!("Session saved -> {}", path)),
+                Err(e) => ui.app.error_msg(format!("Save failed: {}", e)),
+            }
+            ui.input_mode = InputMode::Normal;
+        }
+        _ => {
+            ui.input_mode = InputMode::SessionSave { editor };
+            ui.app
+                .argument_msg(String::from("Session: "), ui.session_save_text());
+        }
+    }
+}
+
+fn handle_session_list(ui: &mut UI, key_event: KeyEvent, mut selected: usize, files: &[String]) {
+    match key_event.code {
+        KeyCode::Esc => {
+            ui.input_mode = InputMode::Normal;
+            ui.app.clear_msg();
+        }
+        KeyCode::Up => {
+            if selected > 0 {
+                selected -= 1;
+            }
+            ui.input_mode = InputMode::SessionList {
+                selected,
+                files: files.to_vec(),
+            };
+        }
+        KeyCode::Down => {
+            if selected + 1 < files.len() {
+                selected += 1;
+            }
+            ui.input_mode = InputMode::SessionList {
+                selected,
+                files: files.to_vec(),
+            };
+        }
+        KeyCode::Enter => {
+            if let Some(name) = files.get(selected) {
+                match ui.app.load_session(std::path::Path::new(name)) {
+                    Ok(()) => ui.app.info_msg(format!("Loaded session {}", name)),
+                    Err(e) => ui.app.error_msg(format!("Load failed: {}", e)),
+                }
+            }
+            ui.input_mode = InputMode::Normal;
+        }
+        _ => {}
+    }
+}
 fn handle_confirm_overwrite(ui: &mut UI, key_event: KeyEvent, editor: LineEditor, path: String) {
     match key_event.code {
         KeyCode::Char('y') | KeyCode::Char('Y') => {

@@ -6,6 +6,7 @@ pub mod app;
 pub mod errors;
 mod runner;
 pub mod seq;
+pub mod session;
 mod tree;
 pub mod ui;
 mod vec_f64_aux;

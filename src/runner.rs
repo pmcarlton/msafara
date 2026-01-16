@@ -167,44 +167,52 @@ pub fn run() -> Result<(), TermalError> {
     }
 
     if let Some(seq_filename) = &cli.aln_fname {
-        let seq_file = match cli.format {
-            SeqFileFormat::FastA => read_fasta_file(seq_filename)?,
-            SeqFileFormat::Clustal => read_clustal_file(seq_filename)?,
-            SeqFileFormat::Stockholm => read_stockholm_file(seq_filename)?,
-        };
-        let alignment = Alignment::from_file(seq_file);
-        let mut ordering_err_msg: Option<String> = None;
-        let mut user_ordering = match cli.user_order {
-            Some(fname) => {
-                // TODO: should be called from_path()
-                let get_ord_vec = read_user_ordering(&fname);
-                match get_ord_vec {
-                    Ok(ord_vec) => Some(ord_vec),
-                    Err(_) => {
-                        ordering_err_msg = Some(format!("Error reading ordering file {}", fname));
-                        None // => App ignores bad user ordering
+        let mut app = if Path::new(seq_filename).extension().and_then(|s| s.to_str())
+            == Some("trml")
+        {
+            App::from_session_file(Path::new(seq_filename))?
+        } else {
+            let seq_file = match cli.format {
+                SeqFileFormat::FastA => read_fasta_file(seq_filename)?,
+                SeqFileFormat::Clustal => read_clustal_file(seq_filename)?,
+                SeqFileFormat::Stockholm => read_stockholm_file(seq_filename)?,
+            };
+            let alignment = Alignment::from_file(seq_file);
+            let mut ordering_err_msg: Option<String> = None;
+            let mut user_ordering = match cli.user_order {
+                Some(fname) => {
+                    // TODO: should be called from_path()
+                    let get_ord_vec = read_user_ordering(&fname);
+                    match get_ord_vec {
+                        Ok(ord_vec) => Some(ord_vec),
+                        Err(_) => {
+                            ordering_err_msg =
+                                Some(format!("Error reading ordering file {}", fname));
+                            None // => App ignores bad user ordering
+                        }
                     }
                 }
+                None => None,
+            };
+            // Check for discrepancies beween the user-specied ordering and alignment headers. The two
+            // sets should be identical.
+            if let Some(ref ord_vec) = user_ordering {
+                let mut uo_clone = ord_vec.clone();
+                let mut ah_clone = alignment.headers.clone();
+                uo_clone.sort();
+                ah_clone.sort();
+                if uo_clone != ah_clone {
+                    ordering_err_msg = Some(String::from("Discrepancies in ordering vs alignment"));
+                    // App must ignore bad user ordering
+                    user_ordering = None;
+                }
+            };
+            let mut app = App::new(seq_filename, alignment, user_ordering);
+            if let Some(msg) = ordering_err_msg {
+                app.error_msg(msg);
             }
-            None => None,
+            app
         };
-        // Check for discrepancies beween the user-specied ordering and alignment headers. The two
-        // sets should be identical.
-        if let Some(ref ord_vec) = user_ordering {
-            let mut uo_clone = ord_vec.clone();
-            let mut ah_clone = alignment.headers.clone();
-            uo_clone.sort();
-            ah_clone.sort();
-            if uo_clone != ah_clone {
-                ordering_err_msg = Some(String::from("Discrepancies in ordering vs alignment"));
-                // App must ignore bad user ordering
-                user_ordering = None;
-            }
-        };
-        let mut app = App::new(seq_filename, alignment, user_ordering);
-        if let Some(msg) = ordering_err_msg {
-            app.error_msg(msg);
-        }
 
         let default_search_colors = "colors.config";
         let search_colors_path = cli.search_colors.or_else(|| {
@@ -238,6 +246,8 @@ pub fn run() -> Result<(), TermalError> {
                 Err(e) => app.error_msg(format!("Error reading tools config {}: {}", path, e)),
             }
         }
+        app.refresh_saved_searches_public();
+        app.recompute_current_seq_search();
 
         if cli.info {
             info!("Running in debug mode.");

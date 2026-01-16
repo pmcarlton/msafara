@@ -852,6 +852,7 @@ dependencies = [
  "log",
  "ratatui",
  "regex",
+ "serde",
  "serde_json",
 ]
 
