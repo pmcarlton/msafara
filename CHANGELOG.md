@@ -11,6 +11,7 @@
 * Configurable search colors via `.termalconfig` and mono-white as the default color mode
 * Header filtering: reject current header match to `rejected<file>` (`!`) and write view output (`W`)
 * Views with per-view ordering/tree/search state, plus `:vc` (create) and `:vs` (switch)
+* View deletion (`:vd`), moving marked sequences to another view (`:mv`), and per-view notes (`|`)
 * README caveat about terminal color schemes affecting ANSI colors
 * Clustal alignment input format (`-f clustal`)
 * Wishlist document for future enhancements
@@ -34,6 +35,7 @@
 * FASTA headers now use the ID token (first whitespace-delimited field)
 * Tools/colors configuration is unified in `.termalconfig` (searched in `$HOME`, then the current directory)
 * Tree selection now renders with heavy box-drawing for the selected subtree
+* Alignment title now includes the current view name
 
 ### Fixed
 

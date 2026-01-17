@@ -137,7 +137,8 @@ Other
 
 * Q,q    : quit
 * ?      : help
-* @      : notes editor (Esc to close; Ctrl-A/Ctrl-E line start/end; Ctrl-B/Ctrl-F word left/right)
+* @      : global notes editor (Esc to close; Ctrl-A/Ctrl-E line start/end; Ctrl-B/Ctrl-F word left/right)
+* |      : per-view notes editor
 
 Searching
 ---------
@@ -169,6 +170,8 @@ Extended commands (:)
 * :sl<Ret>     : load session from .trml (choose from list)
 * :vc<Ret>     : create a new view from the current view (prompts for name)
 * :vs<Ret>     : switch to another view (choose from list)
+* :vd<Ret>     : delete a view (choose from list)
+* :mv<Ret>     : move marked/selected sequences to another view (or :mv 1,4,6-8)
 
 Tree navigation (:tn)
 ---------------------
@@ -186,7 +189,8 @@ Views
 -----
 
 * Views are named collections of sequence IDs, each with its own ordering/tree/search state.
-* Rejection creates "filtered" and "rejected" views automatically.
+* "original" always contains all sequences; "filtered" excludes rejected; "rejected" holds rejects.
+* Rejection creates "filtered" and "rejected" views automatically; custom views drop rejected entries.
 * :vc creates a new view from the current view; :vs switches between views.
 
 OPTIONS

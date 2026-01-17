@@ -57,6 +57,8 @@ P            : save current search and clear its highlights
 :sl<Ret>     : load session from .trml (choose from list)
 :vc<Ret>     : create a new view from the current view (prompts for name)
 :vs<Ret>     : switch to another view (choose from list)
+:vd<Ret>     : delete a view (choose from list)
+:mv<Ret>     : move marked/selected sequences to another view (or :mv 1,4,6-8)
 
 ## Tree navigation
 
@@ -83,7 +85,8 @@ i: toggle inverse/direct video
 
 ## Notes
 
-@: open notes editor (Esc to close; Ctrl-A/Ctrl-E line start/end; Ctrl-B/Ctrl-F word left/right)
+@: open global notes editor (Esc to close; Ctrl-A/Ctrl-E line start/end; Ctrl-B/Ctrl-F word left/right)
+|: open view notes editor (per-view)
 
 Monochrome direct video is the default.
 

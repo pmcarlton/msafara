@@ -8,87 +8,122 @@ use super::{
     line_editor::LineEditor,
     InputMode,
     InputMode::{
-        Command, ConfirmOverwrite, ConfirmReject, ConfirmSessionOverwrite, ExportSvg, Help,
-        LabelSearch, Normal, Notes, PendingCount, Search, SearchList, SessionList, SessionSave,
-        TreeNav, ViewCreate, ViewList,
+        Command, ConfirmOverwrite, ConfirmReject, ConfirmSessionOverwrite, ConfirmViewDelete,
+        ExportSvg, Help, LabelSearch, Normal, Notes, PendingCount, Search, SearchList, SessionList,
+        SessionSave, TreeNav, ViewCreate, ViewDelete, ViewList, ViewMove,
     },
     //SearchDirection,
-    {RejectMode, ZoomLevel, UI},
+    {NotesTarget, RejectMode, ZoomLevel, UI},
 };
-use crate::app::SearchKind;
+use crate::app::{RejectAction, RejectResult, SearchKind};
 use std::collections::HashSet;
 
-fn handle_notes(ui: &mut UI, key_event: KeyEvent, mut editor: super::notes_editor::NotesEditor) {
+fn handle_notes(
+    ui: &mut UI,
+    key_event: KeyEvent,
+    mut editor: super::notes_editor::NotesEditor,
+    target: NotesTarget,
+) {
     match key_event.code {
         KeyCode::Esc => {
-            ui.app.set_notes(editor.text());
+            match target {
+                NotesTarget::Global => ui.app.set_notes(editor.text()),
+                NotesTarget::View => ui.app.set_view_notes(editor.text()),
+            }
             ui.input_mode = InputMode::Normal;
             ui.app.clear_msg();
         }
         KeyCode::Enter => {
             editor.newline();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Backspace => {
             editor.backspace();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Char('m') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
             editor.newline();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Char(c)
             if (c.is_ascii_graphic() || c == ' ')
                 && !key_event.modifiers.contains(KeyModifiers::CONTROL) =>
         {
             editor.insert_char(c);
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Left if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
             editor.move_word_left();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Right if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
             editor.move_word_right();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Left => {
             editor.move_left();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Right => {
             editor.move_right();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Up => {
             editor.move_up();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Down => {
             editor.move_down();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Char('w') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
             editor.delete_word_left();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Char('a') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
             editor.move_line_start();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Char('e') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
             editor.move_line_end();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Char('b') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
             editor.move_word_left();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         KeyCode::Char('f') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
             editor.move_word_right();
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes { editor, target };
         }
         _ => {}
+    }
+}
+
+fn handle_reject_result(ui: &mut UI, result: RejectResult) {
+    match result.action {
+        RejectAction::RejectedToFile => {
+            if result.count == 0 {
+                ui.app.info_msg("No sequences rejected");
+            } else {
+                ui.app
+                    .info_msg(format!("Rejected {} sequences", result.count));
+                if ui.app.all_sequences_rejected() {
+                    ui.set_exit_message("all sequences have been rejected, ending program");
+                }
+            }
+        }
+        RejectAction::RemovedFromView => {
+            if result.count == 0 {
+                ui.app.info_msg("No sequences removed");
+            } else {
+                ui.app
+                    .info_msg(format!("Removed {} sequences from view", result.count));
+            }
+        }
+        RejectAction::AlreadyRejected => {
+            ui.app.info_msg("No sequences rejected");
+        }
     }
 }
 pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
@@ -109,11 +144,14 @@ pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
         }
         SearchList { selected } => handle_search_list(ui, key_event, selected),
         SessionList { selected, files } => handle_session_list(ui, key_event, selected, &files),
-        Notes { editor } => handle_notes(ui, key_event, editor),
+        Notes { editor, target } => handle_notes(ui, key_event, editor, target),
         ConfirmReject { mode } => handle_confirm_reject(ui, key_event, mode),
+        ConfirmViewDelete { name } => handle_confirm_view_delete(ui, key_event, &name),
         TreeNav { nav } => handle_tree_nav(ui, key_event, nav),
         ViewList { selected } => handle_view_list(ui, key_event, selected),
         ViewCreate { editor } => handle_view_create(ui, key_event, editor),
+        ViewDelete { selected } => handle_view_delete(ui, key_event, selected),
+        ViewMove { selected, ranks } => handle_view_move(ui, key_event, selected, &ranks),
     };
     if ui.has_exit_message() {
         true
@@ -478,6 +516,42 @@ fn handle_command(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
                 } else {
                     ui.input_mode = InputMode::ViewList { selected: 0 };
                 }
+            } else if cmd.trim() == "vd" {
+                let views = ui.app.view_names();
+                let first = views
+                    .iter()
+                    .position(|name| !crate::app::App::is_protected_view(name));
+                if let Some(selected) = first {
+                    ui.input_mode = InputMode::ViewDelete { selected };
+                } else {
+                    ui.app.warning_msg("No deletable views");
+                }
+            } else if cmd.trim_start().starts_with("mv") {
+                let arg = cmd.trim_start()[2..].trim();
+                let ranks = if arg.is_empty() {
+                    ui.app.marked_label_ranks()
+                } else {
+                    match parse_rank_list(arg) {
+                        Ok(ranks) => ranks,
+                        Err(msg) => {
+                            ui.app.warning_msg(msg);
+                            return;
+                        }
+                    }
+                };
+                if ranks.is_empty() {
+                    ui.app.warning_msg("No sequences to move");
+                    return;
+                }
+                let views = ui.app.view_names();
+                let first = views
+                    .iter()
+                    .position(|name| crate::app::App::is_move_target_view(name));
+                if let Some(selected) = first {
+                    ui.input_mode = InputMode::ViewMove { selected, ranks };
+                } else {
+                    ui.app.warning_msg("No target views available");
+                }
             } else if cmd.trim() == "rk" {
                 let ranks = ui.app.marked_label_ranks();
                 if ranks.is_empty() {
@@ -486,18 +560,7 @@ fn handle_command(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
                 }
                 let out_path = ui.app.rejected_output_path();
                 match ui.app.reject_sequences(&ranks, &out_path) {
-                    Ok(count) => {
-                        if count == 0 {
-                            ui.app.info_msg("No sequences rejected");
-                        } else {
-                            ui.app.info_msg(format!("Rejected {} sequences", count));
-                            if ui.app.alignment.num_seq() == 0 {
-                                ui.set_exit_message(
-                                    "all sequences have been rejected, ending program",
-                                );
-                            }
-                        }
-                    }
+                    Ok(result) => handle_reject_result(ui, result),
                     Err(e) => ui.app.error_msg(format!("Rejection failed: {}", e)),
                 }
             } else if cmd.trim() == "sl" {
@@ -544,22 +607,7 @@ fn handle_command(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
                     Ok(ranks) => {
                         let out_path = ui.app.rejected_output_path();
                         match ui.app.reject_sequences(&ranks, &out_path) {
-                            Ok(count) => {
-                                if count == 0 {
-                                    ui.app.warning_msg("No sequences to reject");
-                                } else {
-                                    ui.app.info_msg(format!(
-                                        "Rejected {} -> {}",
-                                        count,
-                                        out_path.display()
-                                    ));
-                                    if ui.app.alignment.num_seq() == 0 {
-                                        ui.set_exit_message(
-                                            "all sequences have been rejected, ending program",
-                                        );
-                                    }
-                                }
-                            }
+                            Ok(result) => handle_reject_result(ui, result),
                             Err(e) => ui.app.error_msg(format!("Write failed: {}", e)),
                         }
                     }
@@ -737,6 +785,123 @@ fn handle_view_list(ui: &mut UI, key_event: KeyEvent, selected: usize) {
                     }
                     Err(e) => ui.app.error_msg(format!("View switch failed: {}", e)),
                 }
+            }
+        }
+        _ => {}
+    }
+}
+
+fn advance_view_selection(
+    views: &[String],
+    selected: usize,
+    direction: isize,
+    selectable: impl Fn(&str) -> bool,
+) -> usize {
+    if views.is_empty() {
+        return selected;
+    }
+    let mut idx = selected;
+    for _ in 0..views.len() {
+        let mut next = idx as isize + direction;
+        if next < 0 {
+            next = views.len() as isize - 1;
+        } else if next as usize >= views.len() {
+            next = 0;
+        }
+        idx = next as usize;
+        if selectable(&views[idx]) {
+            return idx;
+        }
+    }
+    selected
+}
+
+fn handle_view_delete(ui: &mut UI, key_event: KeyEvent, selected: usize) {
+    match key_event.code {
+        KeyCode::Esc => {
+            ui.input_mode = InputMode::Normal;
+            ui.app.clear_msg();
+        }
+        KeyCode::Down | KeyCode::Char('j') => {
+            let views = ui.app.view_names();
+            let next = advance_view_selection(views, selected, 1, |name| {
+                !crate::app::App::is_protected_view(name)
+            });
+            ui.input_mode = InputMode::ViewDelete { selected: next };
+        }
+        KeyCode::Up | KeyCode::Char('k') => {
+            let views = ui.app.view_names();
+            let next = advance_view_selection(views, selected, -1, |name| {
+                !crate::app::App::is_protected_view(name)
+            });
+            ui.input_mode = InputMode::ViewDelete { selected: next };
+        }
+        KeyCode::Enter => {
+            let views = ui.app.view_names();
+            if let Some(name) = views.get(selected) {
+                if crate::app::App::is_protected_view(name) {
+                    ui.app.warning_msg("View cannot be deleted");
+                } else {
+                    ui.input_mode = InputMode::ConfirmViewDelete { name: name.clone() };
+                    ui.app.info_msg(format!("Delete view {}? (y/n)", name));
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+fn handle_view_move(ui: &mut UI, key_event: KeyEvent, selected: usize, ranks: &[usize]) {
+    match key_event.code {
+        KeyCode::Esc => {
+            ui.input_mode = InputMode::Normal;
+            ui.app.clear_msg();
+        }
+        KeyCode::Down | KeyCode::Char('j') => {
+            let views = ui.app.view_names();
+            let next = advance_view_selection(views, selected, 1, |name| {
+                crate::app::App::is_move_target_view(name)
+            });
+            ui.input_mode = InputMode::ViewMove {
+                selected: next,
+                ranks: ranks.to_vec(),
+            };
+        }
+        KeyCode::Up | KeyCode::Char('k') => {
+            let views = ui.app.view_names();
+            let next = advance_view_selection(views, selected, -1, |name| {
+                crate::app::App::is_move_target_view(name)
+            });
+            ui.input_mode = InputMode::ViewMove {
+                selected: next,
+                ranks: ranks.to_vec(),
+            };
+        }
+        KeyCode::Enter => {
+            let views = ui.app.view_names();
+            if let Some(name) = views.get(selected).cloned() {
+                if !crate::app::App::is_move_target_view(&name) {
+                    ui.app.warning_msg("View cannot be a target");
+                    return;
+                }
+                let ids = ui.app.ids_for_ranks(ranks);
+                if ids.is_empty() {
+                    ui.app.warning_msg("No sequences to move");
+                    ui.input_mode = InputMode::Normal;
+                    return;
+                }
+                match ui.app.add_ids_to_view(&name, &ids) {
+                    Ok(count) => {
+                        if count == 0 {
+                            ui.app.info_msg("No sequences moved");
+                        } else {
+                            ui.app
+                                .info_msg(format!("Added {} sequences to {}", count, name));
+                        }
+                    }
+                    Err(e) => ui.app.error_msg(format!("Move failed: {}", e)),
+                }
+                ui.input_mode = InputMode::Normal;
             }
         }
         _ => {}
@@ -1035,14 +1200,25 @@ fn perform_reject(ui: &mut UI, mode: RejectMode) {
         return;
     }
     match ui.app.reject_sequences(&ranks, &out_path) {
-        Ok(count) => {
-            ui.app
-                .info_msg(format!("Rejected {} -> {}", count, out_path.display()));
-            if ui.app.alignment.num_seq() == 0 {
-                ui.set_exit_message("all sequences have been rejected, ending program");
-            }
-        }
+        Ok(result) => handle_reject_result(ui, result),
         Err(e) => ui.app.error_msg(format!("Write failed: {}", e)),
+    }
+}
+
+fn handle_confirm_view_delete(ui: &mut UI, key_event: KeyEvent, name: &str) {
+    match key_event.code {
+        KeyCode::Char('y') | KeyCode::Char('Y') => {
+            match ui.app.delete_view(name) {
+                Ok(()) => ui.app.info_msg(format!("Deleted view {}", name)),
+                Err(e) => ui.app.error_msg(format!("Delete failed: {}", e)),
+            }
+            ui.input_mode = InputMode::Normal;
+        }
+        KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+            ui.input_mode = InputMode::Normal;
+            ui.app.clear_msg();
+        }
+        _ => {}
     }
 }
 
@@ -1177,7 +1353,17 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         KeyCode::Char('-') => ui.jump_to_line((count as u16) - 1), // -1: user is 1-based
 
         // Column
-        KeyCode::Char('|') => ui.jump_to_col(count as u16),
+        KeyCode::Char('|') => {
+            if count_arg.is_some() {
+                ui.jump_to_col(count as u16);
+            } else {
+                let editor = super::notes_editor::NotesEditor::new(ui.app.view_notes());
+                ui.input_mode = InputMode::Notes {
+                    editor,
+                    target: NotesTarget::View,
+                };
+            }
+        }
 
         // Relative positions
 
@@ -1290,19 +1476,7 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
             if let Some(rank) = ui.app.current_label_match_rank() {
                 let out_path = ui.app.rejected_output_path();
                 match ui.app.reject_sequences(&[rank], &out_path) {
-                    Ok(count) => {
-                        if count == 0 {
-                            ui.app.warning_msg("No current label match");
-                        } else {
-                            ui.app
-                                .info_msg(format!("Rejected -> {}", out_path.display()));
-                            if ui.app.alignment.num_seq() == 0 {
-                                ui.set_exit_message(
-                                    "all sequences have been rejected, ending program",
-                                );
-                            }
-                        }
-                    }
+                    Ok(result) => handle_reject_result(ui, result),
                     Err(e) => ui.app.error_msg(format!("Write failed: {}", e)),
                 }
             } else {
@@ -1328,9 +1502,11 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         }
         KeyCode::Char('@') => {
             let editor = super::notes_editor::NotesEditor::new(ui.app.notes());
-            ui.input_mode = InputMode::Notes { editor };
+            ui.input_mode = InputMode::Notes {
+                editor,
+                target: NotesTarget::Global,
+            };
         }
-
         _ => {
             // let the user know this key is not bound
             //

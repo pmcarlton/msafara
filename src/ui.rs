@@ -102,9 +102,13 @@ enum InputMode {
     },
     Notes {
         editor: NotesEditor,
+        target: NotesTarget,
     },
     ConfirmReject {
         mode: RejectMode,
+    },
+    ConfirmViewDelete {
+        name: String,
     },
     ViewList {
         selected: usize,
@@ -112,10 +116,23 @@ enum InputMode {
     ViewCreate {
         editor: LineEditor,
     },
+    ViewDelete {
+        selected: usize,
+    },
+    ViewMove {
+        selected: usize,
+        ranks: Vec<usize>,
+    },
     TreeNav {
         nav: TreeNav,
     },
     // ExCommand { buffer: String },
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) enum NotesTarget {
+    Global,
+    View,
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -892,9 +909,23 @@ impl<'a> UI<'a> {
         }
     }
 
-    pub fn notes_state(&self) -> Option<&NotesEditor> {
+    pub fn view_delete_selected(&self) -> Option<usize> {
+        match self.input_mode {
+            InputMode::ViewDelete { selected } => Some(selected),
+            _ => None,
+        }
+    }
+
+    pub fn view_move_state(&self) -> Option<(usize, &[usize])> {
         match &self.input_mode {
-            InputMode::Notes { editor } => Some(editor),
+            InputMode::ViewMove { selected, ranks } => Some((*selected, ranks.as_slice())),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn notes_state(&self) -> Option<(&NotesEditor, NotesTarget)> {
+        match &self.input_mode {
+            InputMode::Notes { editor, target } => Some((editor, *target)),
             _ => None,
         }
     }

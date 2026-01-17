@@ -352,8 +352,9 @@ fn tick_position(aln_length: usize) -> String {
 fn compute_title(ui: &UI) -> String {
     ui.common_ratio();
     let title = format!(
-        " {} | {}/{}s x {}/{}c | {} {}",
+        " {} | view: {} | {}/{}s x {}/{}c | {} {}",
         ui.app.filename,
+        ui.app.current_view_name(),
         ui.max_nb_seq_shown(),
         ui.app.num_seq(),
         ui.max_nb_col_shown(),
@@ -807,11 +808,83 @@ fn render_view_list_dialog(f: &mut Frame, dialog_chunk: Rect, ui: &UI) {
     f.render_widget(dialog_para, dialog_chunk);
 }
 
+fn render_view_delete_dialog(f: &mut Frame, dialog_chunk: Rect, ui: &UI) {
+    let dialog_block = Block::default().borders(Borders::ALL).title("Delete View");
+    let selected = ui.view_delete_selected().unwrap_or(0);
+    let views = ui.app.view_names();
+
+    let mut lines: Vec<Line> = Vec::new();
+    lines.push(Line::from("View"));
+    lines.push(Line::from("----"));
+    for (idx, name) in views.iter().enumerate() {
+        let locked = if crate::app::App::is_protected_view(name) {
+            " (locked)"
+        } else {
+            ""
+        };
+        let line = format!("{}{}", name, locked);
+        let style = if idx == selected {
+            Style::default().add_modifier(Modifier::REVERSED)
+        } else {
+            Style::default()
+        };
+        lines.push(Line::styled(line, style));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(
+        "Up/Down to select, Enter to delete, Esc to cancel.",
+    ));
+
+    let dialog_para = Paragraph::new(Text::from(lines))
+        .block(dialog_block)
+        .style(Style::default());
+    f.render_widget(Clear, dialog_chunk);
+    f.render_widget(dialog_para, dialog_chunk);
+}
+
+fn render_view_move_dialog(f: &mut Frame, dialog_chunk: Rect, ui: &UI) {
+    let dialog_block = Block::default().borders(Borders::ALL).title("Move to View");
+    let (selected, _ranks) = ui.view_move_state().unwrap_or((0, &[]));
+    let views = ui.app.view_names();
+
+    let mut lines: Vec<Line> = Vec::new();
+    lines.push(Line::from("View"));
+    lines.push(Line::from("----"));
+    for (idx, name) in views.iter().enumerate() {
+        let locked = if crate::app::App::is_move_target_view(name) {
+            ""
+        } else {
+            " (locked)"
+        };
+        let line = format!("{}{}", name, locked);
+        let style = if idx == selected {
+            Style::default().add_modifier(Modifier::REVERSED)
+        } else {
+            Style::default()
+        };
+        lines.push(Line::styled(line, style));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(
+        "Up/Down to select, Enter to add, Esc to cancel.",
+    ));
+
+    let dialog_para = Paragraph::new(Text::from(lines))
+        .block(dialog_block)
+        .style(Style::default());
+    f.render_widget(Clear, dialog_chunk);
+    f.render_widget(dialog_para, dialog_chunk);
+}
+
 fn render_notes_dialog(f: &mut Frame, dialog_chunk: Rect, ui: &UI) {
-    let dialog_block = Block::default().borders(Borders::ALL).title("Notes");
-    let Some(editor) = ui.notes_state() else {
+    let Some((editor, target)) = ui.notes_state() else {
         return;
     };
+    let title = match target {
+        super::NotesTarget::Global => "Notes",
+        super::NotesTarget::View => "View Notes",
+    };
+    let dialog_block = Block::default().borders(Borders::ALL).title(title);
 
     let max_width = dialog_chunk.width.saturating_sub(2);
     let max_height = dialog_chunk.height.saturating_sub(2);
@@ -917,6 +990,14 @@ pub fn render_ui(f: &mut Frame, ui: &mut UI) {
 
     if let InputMode::ViewList { .. } = ui.input_mode {
         render_view_list_dialog(f, layout_panes.dialog, ui);
+    }
+
+    if let InputMode::ViewDelete { .. } = ui.input_mode {
+        render_view_delete_dialog(f, layout_panes.dialog, ui);
+    }
+
+    if let InputMode::ViewMove { .. } = ui.input_mode {
+        render_view_move_dialog(f, layout_panes.dialog, ui);
     }
 
     if let InputMode::Notes { .. } = ui.input_mode {

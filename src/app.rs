@@ -151,6 +151,15 @@ struct ViewState {
     active_search_ids: HashSet<usize>,
     user_ordering: Option<Vec<String>>,
     output_path: PathBuf,
+    notes: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ViewKind {
+    Original,
+    Filtered,
+    Rejected,
+    Custom,
 }
 
 pub struct SeqSearchState {
@@ -161,6 +170,18 @@ pub struct SeqSearchState {
     pub sequences_with_matches: usize,
     pub matches: Vec<SeqMatch>,
     pub current_match: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RejectAction {
+    RejectedToFile,
+    RemovedFromView,
+    AlreadyRejected,
+}
+
+pub struct RejectResult {
+    pub count: usize,
+    pub action: RejectAction,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -349,6 +370,7 @@ pub struct App {
     mafft_bin_dir: Option<PathBuf>,
     last_reject: Option<LastReject>,
     notes: String,
+    view_notes: String,
     tree_lines: Vec<String>,
     tree_panel_width: u16,
     tree: Option<TreeNode>,
@@ -406,6 +428,7 @@ impl App {
             active_search_ids: self.active_search_ids.clone(),
             user_ordering: self.user_ordering.clone(),
             output_path: self.current_view_output_path.clone(),
+            notes: self.view_notes.clone(),
         }
     }
 
@@ -474,6 +497,7 @@ impl App {
         self.refresh_saved_searches();
         self.recompute_ordering();
         self.current_view_output_path = view.output_path.clone();
+        self.view_notes = view.notes.clone();
         if self.tree.is_some() {
             self.update_tree_lines_for_selection();
         }
@@ -488,6 +512,27 @@ impl App {
         &self.view_order
     }
 
+    fn view_kind(name: &str) -> ViewKind {
+        match name {
+            "original" => ViewKind::Original,
+            "filtered" => ViewKind::Filtered,
+            "rejected" => ViewKind::Rejected,
+            _ => ViewKind::Custom,
+        }
+    }
+
+    fn current_view_kind(&self) -> ViewKind {
+        Self::view_kind(&self.current_view)
+    }
+
+    pub fn is_protected_view(name: &str) -> bool {
+        matches!(name, "original" | "filtered" | "rejected")
+    }
+
+    pub fn is_move_target_view(name: &str) -> bool {
+        name != "original"
+    }
+
     pub fn switch_view(&mut self, name: &str) -> Result<(), TermalError> {
         if name == self.current_view {
             return Ok(());
@@ -499,6 +544,30 @@ impl App {
             .ok_or_else(|| TermalError::Format(format!("Unknown view {}", name)))?;
         self.store_current_view_state();
         self.load_view_state(view)?;
+        Ok(())
+    }
+
+    pub fn delete_view(&mut self, name: &str) -> Result<(), TermalError> {
+        if Self::is_protected_view(name) {
+            return Err(TermalError::Format(format!(
+                "View {} cannot be deleted",
+                name
+            )));
+        }
+        if !self.views.contains_key(name) {
+            return Err(TermalError::Format(format!("Unknown view {}", name)));
+        }
+        if name != self.current_view {
+            self.store_current_view_state();
+        }
+        self.views.remove(name);
+        self.view_order.retain(|view_name| view_name != name);
+        if name == self.current_view {
+            self.current_view = String::from("original");
+            if let Some(view) = self.views.get(&self.current_view).cloned() {
+                self.load_view_state(view)?;
+            }
+        }
         Ok(())
     }
 
@@ -558,6 +627,7 @@ impl App {
             active_search_ids: self.active_search_ids.clone(),
             user_ordering: self.user_ordering.clone(),
             output_path: self.output_path_for_view(name),
+            notes: String::new(),
         };
         self.views.insert(name.to_string(), view);
         self.view_order.push(name.to_string());
@@ -594,6 +664,7 @@ impl App {
                 active_search_ids: active_search_ids.clone(),
                 user_ordering: None,
                 output_path: self.output_path_for_view("filtered"),
+                notes: String::new(),
             };
             self.views.insert(String::from("filtered"), view);
             self.view_order.push(String::from("filtered"));
@@ -611,6 +682,7 @@ impl App {
                 active_search_ids,
                 user_ordering: None,
                 output_path: self.output_path_for_view("rejected"),
+                notes: String::new(),
             };
             self.views.insert(String::from("rejected"), view);
             self.view_order.push(String::from("rejected"));
@@ -637,6 +709,75 @@ impl App {
 
     pub fn current_view_output_path(&self) -> &Path {
         &self.current_view_output_path
+    }
+
+    pub fn ids_for_ranks(&self, ranks: &[usize]) -> Vec<usize> {
+        let mut ids = Vec::new();
+        for &rank in ranks {
+            if let Some(id) = self.current_view_ids.get(rank).copied() {
+                ids.push(id);
+            }
+        }
+        ids.sort_unstable();
+        ids.dedup();
+        ids
+    }
+
+    fn append_ids_in_order(existing: &mut Vec<usize>, ids: &[usize]) -> usize {
+        let mut seen: HashSet<usize> = existing.iter().copied().collect();
+        let mut added = 0;
+        let mut sorted = ids.to_vec();
+        sorted.sort_unstable();
+        sorted.dedup();
+        for id in sorted {
+            if seen.insert(id) {
+                existing.push(id);
+                added += 1;
+            }
+        }
+        added
+    }
+
+    pub fn add_ids_to_view(&mut self, name: &str, ids: &[usize]) -> Result<usize, TermalError> {
+        if name == "original" {
+            return Ok(0);
+        }
+        if ids.is_empty() {
+            return Ok(0);
+        }
+        if name == "filtered" || name == "rejected" {
+            self.ensure_filtered_rejected_views();
+            for id in ids {
+                if name == "rejected" {
+                    self.rejected_ids.insert(*id);
+                } else {
+                    self.rejected_ids.remove(id);
+                }
+            }
+            self.rebuild_filtered_rejected_views();
+            if matches!(self.current_view.as_str(), "filtered" | "rejected") {
+                if let Some(view) = self.views.get(&self.current_view).cloned() {
+                    self.load_view_state(view)?;
+                }
+            }
+            return Ok(ids.len());
+        }
+
+        let view = self
+            .views
+            .get_mut(name)
+            .ok_or_else(|| TermalError::Format(format!("Unknown view {}", name)))?;
+        let added = Self::append_ids_in_order(&mut view.sequence_ids, ids);
+        if name == self.current_view {
+            self.current_view_ids = view.sequence_ids.clone();
+            self.alignment = self.build_alignment_for_ids(&self.current_view_ids);
+            let len = self.alignment.num_seq();
+            self.ordering = (0..len).collect();
+            self.reverse_ordering = (0..len).collect();
+            self.refresh_saved_searches();
+            self.recompute_ordering();
+        }
+        Ok(added)
     }
     pub fn from_session_file(path: &Path) -> Result<Self, TermalError> {
         let contents = fs::read_to_string(path)?;
@@ -683,6 +824,7 @@ impl App {
             active_search_ids: HashSet::new(),
             user_ordering: usr_ord.clone(),
             output_path: original_output_path.clone(),
+            notes: String::new(),
         };
         active_search_ids.extend(original_view.active_search_ids.iter().copied());
         views.insert(String::from("original"), original_view);
@@ -710,6 +852,7 @@ impl App {
             mafft_bin_dir: None,
             last_reject: None,
             notes: String::new(),
+            view_notes: String::new(),
             tree_lines: Vec::new(),
             tree_panel_width: 0,
             tree: None,
@@ -729,6 +872,10 @@ impl App {
 
     pub fn aln_len(&self) -> u16 {
         self.alignment.aln_len().try_into().unwrap()
+    }
+
+    pub fn all_sequences_rejected(&self) -> bool {
+        !self.records.is_empty() && self.rejected_ids.len() == self.records.len()
     }
 
     pub fn default_session_path(&self) -> PathBuf {
@@ -801,6 +948,11 @@ impl App {
                     label_search: view.label_search.clone(),
                     active_search_ids: view.active_search_ids.iter().copied().collect(),
                     user_ordering: view.user_ordering.clone(),
+                    notes: if view.notes.is_empty() {
+                        None
+                    } else {
+                        Some(view.notes.clone())
+                    },
                 });
             }
         }
@@ -877,6 +1029,7 @@ impl App {
                     active_search_ids,
                     user_ordering: view.user_ordering,
                     output_path,
+                    notes: view.notes.unwrap_or_default(),
                 };
                 self.view_order.push(view.name.clone());
                 self.views.insert(view.name, view_state);
@@ -909,6 +1062,7 @@ impl App {
                 active_search_ids: HashSet::new(),
                 user_ordering: None,
                 output_path: self.output_path_for_view("original"),
+                notes: String::new(),
             };
             self.view_order.push(String::from("original"));
             self.views.insert(String::from("original"), view);
@@ -1627,9 +1781,41 @@ impl App {
         self.recompute_ordering();
     }
 
-    pub fn reject_sequences(&mut self, ranks: &[usize], path: &Path) -> Result<usize, TermalError> {
+    pub fn reject_sequences(
+        &mut self,
+        ranks: &[usize],
+        path: &Path,
+    ) -> Result<RejectResult, TermalError> {
         if ranks.is_empty() {
-            return Ok(0);
+            return Ok(RejectResult {
+                count: 0,
+                action: RejectAction::AlreadyRejected,
+            });
+        }
+        match self.current_view_kind() {
+            ViewKind::Custom => {
+                let removed = self.remove_sequences_with_ranks(ranks);
+                if removed.is_empty() {
+                    return Ok(RejectResult {
+                        count: 0,
+                        action: RejectAction::RemovedFromView,
+                    });
+                }
+                if let Some(view) = self.views.get_mut(&self.current_view) {
+                    view.sequence_ids = self.current_view_ids.clone();
+                }
+                return Ok(RejectResult {
+                    count: removed.len(),
+                    action: RejectAction::RemovedFromView,
+                });
+            }
+            ViewKind::Rejected => {
+                return Ok(RejectResult {
+                    count: 0,
+                    action: RejectAction::AlreadyRejected,
+                });
+            }
+            ViewKind::Original | ViewKind::Filtered => {}
         }
         self.ensure_filtered_rejected_views();
         let mut removed_new: Vec<RemovedSeq> = Vec::new();
@@ -1649,7 +1835,10 @@ impl App {
             }
         }
         if removed_new.is_empty() {
-            return Ok(0);
+            return Ok(RejectResult {
+                count: 0,
+                action: RejectAction::AlreadyRejected,
+            });
         }
         if let Some(last) = &self.last_reject {
             if let Some(backup) = &last.backup {
@@ -1750,7 +1939,10 @@ impl App {
         if self.current_view != "original" {
             let removed = self.remove_sequences_with_ranks(ranks);
             if removed.is_empty() {
-                return Ok(0);
+                return Ok(RejectResult {
+                    count: removed_len,
+                    action: RejectAction::RejectedToFile,
+                });
             }
             let mut removed_sorted = removed.clone();
             removed_sorted.sort_by_key(|rec| rec.rank);
@@ -1773,7 +1965,10 @@ impl App {
                 modified_view: false,
             });
         }
-        Ok(removed_len)
+        Ok(RejectResult {
+            count: removed_len,
+            action: RejectAction::RejectedToFile,
+        })
     }
 
     pub fn undo_last_reject(&mut self) -> Result<usize, TermalError> {
@@ -2105,6 +2300,17 @@ impl App {
 
     pub fn set_notes(&mut self, notes: String) {
         self.notes = notes;
+    }
+
+    pub fn view_notes(&self) -> &str {
+        &self.view_notes
+    }
+
+    pub fn set_view_notes(&mut self, notes: String) {
+        self.view_notes = notes;
+        if let Some(view) = self.views.get_mut(&self.current_view) {
+            view.notes = self.view_notes.clone();
+        }
     }
 
     // Messages
@@ -3034,6 +3240,7 @@ mod tests {
         app.tree_newick = Some(String::from("(R1,(R2,R3));"));
         app.tree = Some(tree);
         app.set_notes(String::from("Session notes"));
+        app.set_view_notes(String::from("View notes"));
         app.add_saved_search_with_kind(
             String::from("motif"),
             String::from("AA"),
@@ -3056,6 +3263,7 @@ mod tests {
         assert_eq!(loaded.current_seq_search_pattern(), Some("AA"));
         assert_eq!(loaded.marked_label_ranks(), vec![0, 2]);
         assert_eq!(loaded.notes(), "Session notes");
+        assert_eq!(loaded.view_notes(), "View notes");
         let _ = std::fs::remove_file(&path);
     }
 

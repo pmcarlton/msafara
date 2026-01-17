@@ -57,6 +57,7 @@ pub struct SessionView {
     pub label_search: Option<SessionLabelSearch>,
     pub active_search_ids: Vec<usize>,
     pub user_ordering: Option<Vec<String>>,
+    pub notes: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
