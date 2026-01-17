@@ -68,3 +68,27 @@
     block characters.
   - The sparkline is drawn as the fourth line of the bottom pane in
     `src/ui/render.rs:render_bottom_pane`, styled with `ColorScheme::conservation_color`.
+
+## Prioritized TODOs
+
+P0 (performance/UX)
+- Add a dirty-render flag to avoid full redraws on a fixed timer tick; only redraw on input, resize,
+  or state changes (event loop in `src/runner.rs`).
+- Cache retained row/column indices per render pass to avoid repeated allocation and scanning
+  (`src/ui/render.rs:retained_seq_ndx` / `retained_col_ndx`).
+
+P1 (performance)
+- Cache a header->index lookup table to make label-search mapping O(n) instead of O(n^2)
+  (`src/app.rs:map_headers_to_indices` and `recompute_search_state`).
+- Avoid rebuilding full label line vectors on every frame; cache per view/order and only restyle
+  cursor/selection rows (`src/ui/render.rs:zoom_in_lbl_text` / `zoom_out_lbl_text`).
+
+P2 (robustness/UX)
+- Filter out empty views in the `:vs` selection list to prevent avoidable errors
+  (`src/ui/key_handling.rs:handle_view_list` and `src/ui/render.rs:render_view_list_dialog`).
+- Reduce clone churn on view switch by borrowing where possible in `src/app.rs` view state load/save.
+
+P3 (cleanup)
+- Consolidate UI constants for border widths and pane calculations (`src/ui.rs`).
+- Consider splitting `src/ui/render.rs` into smaller modules per pane to reduce function size and
+  improve testability.
