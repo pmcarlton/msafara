@@ -384,6 +384,31 @@ impl App {
         Alignment::from_vecs(headers, sequences)
     }
 
+    fn update_records_from_alignment(
+        &mut self,
+        alignment: &Alignment,
+        ids: &[usize],
+    ) -> Result<(), TermalError> {
+        let mut seq_map: HashMap<&String, &String> = HashMap::new();
+        for (header, sequence) in alignment.headers.iter().zip(alignment.sequences.iter()) {
+            seq_map.insert(header, sequence);
+        }
+        for id in ids {
+            let record = self
+                .records
+                .get_mut(*id)
+                .ok_or_else(|| TermalError::Format(format!("Unknown sequence id {}", id)))?;
+            let seq = seq_map.get(&record.header).ok_or_else(|| {
+                TermalError::Format(format!(
+                    "Realigned sequence missing header {}",
+                    record.header
+                ))
+            })?;
+            record.sequence = (*seq).clone();
+        }
+        Ok(())
+    }
+
     fn sync_search_registry_enabled(&mut self) {
         let enabled_ids = self.active_search_ids.clone();
         for entry in &mut self.search_registry.searches {
@@ -2196,7 +2221,10 @@ impl App {
         let (lines, order) = tree_lines_and_order(&tree)?;
 
         let seq_file = read_fasta_file(&output_path)?;
-        self.alignment = Alignment::from_file(seq_file);
+        let mafft_alignment = Alignment::from_file(seq_file);
+        let view_ids = self.current_view_ids.clone();
+        self.update_records_from_alignment(&mafft_alignment, &view_ids)?;
+        self.alignment = self.build_alignment_for_ids(&view_ids);
         self.search_state = None;
         self.seq_search_state = None;
         self.label_search_source = None;
@@ -2966,6 +2994,23 @@ mod tests {
         let tools = ToolsConfig::from_value(&value);
         assert_eq!(tools.emboss_bin_dir, Some(PathBuf::from("/opt/emboss")));
         assert_eq!(tools.mafft_bin_dir, Some(PathBuf::from("/opt/mafft")));
+    }
+
+    #[test]
+    fn test_update_records_from_alignment() {
+        let hdrs = vec![String::from("A"), String::from("B")];
+        let seqs = vec![String::from("AA"), String::from("CC")];
+        let aln = Alignment::from_vecs(hdrs, seqs);
+        let mut app = App::new("TEST", aln, None);
+
+        let updated = Alignment::from_vecs(
+            vec![String::from("A"), String::from("B")],
+            vec![String::from("TT"), String::from("GG")],
+        );
+        app.update_records_from_alignment(&updated, &[1]).unwrap();
+
+        assert_eq!(app.records[0].sequence, "AA");
+        assert_eq!(app.records[1].sequence, "GG");
     }
 
     #[test]
