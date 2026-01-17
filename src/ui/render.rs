@@ -100,7 +100,7 @@ fn zoom_in_lbl_text<'a>(ui: &UI) -> Vec<Line<'a>> {
         .ordering
         .iter()
         .map(|i| {
-            let mut hl_style = if ui.app.is_label_marked(*i) {
+            let mut hl_style = if ui.app.is_label_marked(*i) || ui.app.is_label_selected(*i) {
                 Style::default().bg(Color::White).fg(Color::Black)
             } else {
                 Style::default()
@@ -122,7 +122,7 @@ fn zoom_out_lbl_text<'a>(ui: &UI) -> Vec<Line<'a>> {
 
     for i in retained_seq_ndx(ui) {
         let rank = ui.app.ordering[i];
-        let mut hl_style = if ui.app.is_label_marked(rank) {
+        let mut hl_style = if ui.app.is_label_marked(rank) || ui.app.is_label_selected(rank) {
             Style::default().bg(Color::White).fg(Color::Black)
         } else {
             Style::default()

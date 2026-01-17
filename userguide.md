@@ -19,9 +19,10 @@ and downsampled views. A zoombox shows the viewport position when zoomed out.
 
 The cursor highlights a single sequence for visual inspection; it is the
 default target for actions when nothing is selected. Marks are accumulated from
-header searches and tree navigation, and can stack across multiple ranges.
-Selections are explicit, per-view sets of sequences that actions operate on.
-Marks and cursor can be cleared with `:cm` and `:cc`.
+header searches and can stack across multiple ranges. Tree navigation selects
+the matching subtree as a selection set. Selections are explicit, per-view sets
+of sequences that actions operate on. Marks and cursor can be cleared with
+`:cm` and `:cc`.
 
 ## Searching Sequence Headers
 

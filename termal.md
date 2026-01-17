@@ -188,7 +188,8 @@ Selection
 ---------
 
 * Cursor highlights one sequence for visual inspection.
-* Marked matches can stack from multiple searches or tree selections.
+* Marked matches can stack from multiple header searches.
+* Tree navigation selects the matching subtree as a selection set.
 * Selection is per-view and used for actions; if empty, actions use the cursor.
 * x            : toggle selection on cursor line
 * A            : select all in view

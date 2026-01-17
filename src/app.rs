@@ -570,9 +570,6 @@ impl App {
                 self.cursor_id = None;
             }
         }
-        if self.cursor_id.is_none() {
-            self.cursor_id = self.current_view_ids.first().copied();
-        }
     }
 
     pub fn delete_view(&mut self, name: &str) -> Result<(), TermalError> {
@@ -698,7 +695,7 @@ impl App {
                 notes: String::new(),
                 selected_ids: HashSet::new(),
                 marked_ids: HashSet::new(),
-                cursor_id: (0..self.records.len()).next(),
+                cursor_id: None,
             };
             self.views.insert(String::from("filtered"), view);
             self.view_order.push(String::from("filtered"));
@@ -865,7 +862,7 @@ impl App {
             notes: String::new(),
             selected_ids: HashSet::new(),
             marked_ids: HashSet::new(),
-            cursor_id: (0..len).next(),
+            cursor_id: None,
         };
         active_search_ids.extend(original_view.active_search_ids.iter().copied());
         views.insert(String::from("original"), original_view);
@@ -902,7 +899,7 @@ impl App {
             rejected_ids: HashSet::new(),
             selected_ids: HashSet::new(),
             marked_ids: HashSet::new(),
-            cursor_id: (0..len).next(),
+            cursor_id: None,
         }
     }
 
@@ -1121,7 +1118,7 @@ impl App {
                 notes: String::new(),
                 selected_ids: HashSet::new(),
                 marked_ids: HashSet::new(),
-                cursor_id: original_ids.first().copied(),
+                cursor_id: None,
             };
             self.view_order.push(String::from("original"));
             self.views.insert(String::from("original"), view);
@@ -1506,28 +1503,30 @@ impl App {
 
     pub fn set_label_matches_from_tree(&mut self, matches: Vec<usize>, tree_range: (usize, usize)) {
         if matches.is_empty() {
-            self.reset_lbl_search();
+            self.tree_selection_range = None;
+            self.update_tree_lines_for_selection();
             return;
         }
-        let mut state = build_label_state_from_matches(
+        let state = build_label_state_from_matches(
             String::from("<tree>"),
             matches,
             self.alignment.headers.len(),
         );
-        state.current = 0;
+        self.tree_selection_range = Some(tree_range);
+        self.selected_ids.clear();
+        for rank in &state.match_linenums {
+            if let Some(id) = self.current_view_ids.get(*rank).copied() {
+                self.selected_ids.insert(id);
+            }
+        }
+        if let Some(view) = self.views.get_mut(&self.current_view) {
+            view.selected_ids = self.selected_ids.clone();
+        }
         if let Some(first) = state.match_linenums.first().copied() {
             if let Some(id) = self.current_view_ids.get(first).copied() {
                 self.cursor_id = Some(id);
             }
         }
-        for rank in &state.match_linenums {
-            if let Some(id) = self.current_view_ids.get(*rank).copied() {
-                self.marked_ids.insert(id);
-            }
-        }
-        self.search_state = Some(state);
-        self.label_search_source = Some(LabelSearchSource::Tree);
-        self.tree_selection_range = Some(tree_range);
         self.update_tree_lines_for_selection();
     }
 
@@ -3217,7 +3216,7 @@ mod tests {
         assert!(loaded.tree.is_some());
         assert_eq!(loaded.saved_searches().len(), 1);
         assert_eq!(loaded.current_seq_search_pattern(), Some("AA"));
-        assert_eq!(loaded.marked_label_ranks(), vec![0, 2]);
+        assert_eq!(loaded.selection_ranks(), vec![0, 2]);
         assert_eq!(loaded.notes(), "Session notes");
         assert_eq!(loaded.view_notes(), "View notes");
         let _ = std::fs::remove_file(&path);
