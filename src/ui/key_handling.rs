@@ -715,6 +715,38 @@ fn apply_tree_nav_selection(ui: &mut UI, nav: &super::TreeNav) {
     ui.app.set_label_matches_from_tree(ranks, range);
 }
 
+fn autoscroll_tree_selection(ui: &mut UI, ranks: &[usize]) {
+    if ranks.is_empty() {
+        return;
+    }
+    let visible = ui.visible_seq_rows() as usize;
+    if visible == 0 {
+        return;
+    }
+    let top = ui.top_line() as usize;
+    let bottom = top + visible - 1;
+    let first_rank = ranks[0];
+    let first_screen = ui.app.rank_to_screenline(first_rank);
+    let mut max_screen = first_screen;
+    for rank in ranks.iter().skip(1) {
+        let screen = ui.app.rank_to_screenline(*rank);
+        if screen > max_screen {
+            max_screen = screen;
+        }
+    }
+    if first_screen >= top && max_screen <= bottom {
+        return;
+    }
+    let context = visible / 4;
+    let mut desired_top = first_screen.saturating_sub(context);
+    if desired_top + visible - 1 < max_screen {
+        desired_top = max_screen.saturating_sub(visible - 1);
+    }
+    let desired_top = desired_top.min(ui.max_top_line() as usize);
+    ui.jump_to_line(desired_top as u16);
+    mark_dirty(ui);
+}
+
 fn handle_tree_nav(ui: &mut UI, key_event: KeyEvent, mut nav: super::TreeNav) {
     let mut changed = false;
     match key_event.code {
@@ -723,6 +755,14 @@ fn handle_tree_nav(ui: &mut UI, key_event: KeyEvent, mut nav: super::TreeNav) {
             ui.app.clear_msg();
             mark_dirty(ui);
             return;
+        }
+        KeyCode::Up if key_event.modifiers.contains(KeyModifiers::SHIFT) => {
+            ui.scroll_one_screen_up(1);
+            mark_dirty(ui);
+        }
+        KeyCode::Down if key_event.modifiers.contains(KeyModifiers::SHIFT) => {
+            ui.scroll_one_screen_down(1);
+            mark_dirty(ui);
         }
         KeyCode::Left | KeyCode::Char('h') => {
             changed = nav.move_left();
@@ -740,6 +780,7 @@ fn handle_tree_nav(ui: &mut UI, key_event: KeyEvent, mut nav: super::TreeNav) {
     }
     if changed {
         apply_tree_nav_selection(ui, &nav);
+        autoscroll_tree_selection(ui, &nav.selected_leaf_ranks());
         mark_dirty(ui);
     }
     ui.input_mode = InputMode::TreeNav { nav };

@@ -21,6 +21,7 @@
 * Session save/load with JSON .trml files (`:ss`, `:sl`)
 * Notes editor (`@`) stored inside session files
 * Tree navigation mode (`:tn`) with subtree selection and `:rs` reject for selected labels
+* Tree navigation Shift-Up/Down for screen scrolling without changing selection
 
 ### Changed
 
@@ -52,6 +53,7 @@
 * MAFFT tree leaf names now map to headers with spaces/dots normalized and numeric prefixes stripped
 * Tree panel uses box-drawing characters with horizontal branches extended to leaf column
 * Tree selection now rejects the same sequences shown in the tree after realignment
+* Tree navigation auto-scroll keeps selected leaves in view when navigating large alignments
 
 ---
 above: pmcarlton changes

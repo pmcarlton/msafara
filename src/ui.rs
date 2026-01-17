@@ -498,6 +498,10 @@ impl<'a> UI<'a> {
         height.saturating_sub(2) // Borders - TODO: use constants!
     }
 
+    pub fn visible_seq_rows(&self) -> u16 {
+        self.max_nb_seq_shown()
+    }
+
     fn max_nb_col_shown(&self) -> u16 {
         let width = self.aln_pane_size.unwrap().width;
         width.saturating_sub(2) // Borders - TODO: use constants!
