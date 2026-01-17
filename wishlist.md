@@ -12,6 +12,6 @@ potential enhancements and new features that would make termal faster, clearer, 
 - [x] Session files to restore filters, searches, ordering, and panes.
 - [x] Realigning using mafft or clustal (shown in .termalconfig) and ordering by phylogenetic tree. 
 - [x] Toggleable panel to show tree with simple graphics.
-- [ ] Selection and navigation by phylogenetic tree (jump between clades/leaf nodes).
+- [x] Selection and navigation by phylogenetic tree (jump between clades/leaf nodes).
 - [ ] Multi-level undo/redo for reject/filter actions and search edits.
 - [x] Notes pane to record information about session
