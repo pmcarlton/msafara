@@ -1085,10 +1085,20 @@ impl<'a> UI<'a> {
             .saturating_sub(count.saturating_mul(self.max_nb_seq_shown()));
     }
 
+    pub fn scroll_half_screen_up(&mut self, count: u16) {
+        let step = max(1, self.max_nb_seq_shown() / 2);
+        self.top_line = self.top_line.saturating_sub(count.saturating_mul(step));
+    }
+
     pub fn scroll_one_screen_left(&mut self, count: u16) {
         self.leftmost_col = self
             .leftmost_col
             .saturating_sub(count.saturating_mul(self.max_nb_col_shown()));
+    }
+
+    pub fn scroll_half_screen_left(&mut self, count: u16) {
+        let step = max(1, self.max_nb_col_shown() / 2);
+        self.leftmost_col = self.leftmost_col.saturating_sub(count.saturating_mul(step));
     }
 
     pub fn scroll_one_screen_down(&mut self, count: u16) {
@@ -1099,10 +1109,26 @@ impl<'a> UI<'a> {
         );
     }
 
+    pub fn scroll_half_screen_down(&mut self, count: u16) {
+        let step = max(1, self.max_nb_seq_shown() / 2);
+        self.top_line = min(
+            self.top_line.saturating_add(count.saturating_mul(step)),
+            self.max_top_line(),
+        );
+    }
+
     pub fn scroll_one_screen_right(&mut self, count: u16) {
         self.leftmost_col = min(
             self.leftmost_col
                 .saturating_add(count.saturating_mul(self.max_nb_col_shown())),
+            self.max_leftmost_col(),
+        );
+    }
+
+    pub fn scroll_half_screen_right(&mut self, count: u16) {
+        let step = max(1, self.max_nb_col_shown() / 2);
+        self.leftmost_col = min(
+            self.leftmost_col.saturating_add(count.saturating_mul(step)),
             self.max_leftmost_col(),
         );
     }

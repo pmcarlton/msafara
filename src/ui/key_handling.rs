@@ -768,19 +768,19 @@ fn handle_tree_nav(ui: &mut UI, key_event: KeyEvent, mut nav: super::TreeNav) {
             return;
         }
         KeyCode::Up if key_event.modifiers.contains(KeyModifiers::SHIFT) => {
-            ui.scroll_one_screen_up(1);
+            ui.scroll_half_screen_up(1);
             mark_dirty(ui);
         }
         KeyCode::Down if key_event.modifiers.contains(KeyModifiers::SHIFT) => {
-            ui.scroll_one_screen_down(1);
+            ui.scroll_half_screen_down(1);
             mark_dirty(ui);
         }
         KeyCode::Left if key_event.modifiers.contains(KeyModifiers::SHIFT) => {
-            ui.scroll_one_screen_left(1);
+            ui.scroll_half_screen_left(1);
             mark_dirty(ui);
         }
         KeyCode::Right if key_event.modifiers.contains(KeyModifiers::SHIFT) => {
-            ui.scroll_one_screen_right(1);
+            ui.scroll_half_screen_right(1);
             mark_dirty(ui);
         }
         KeyCode::Left | KeyCode::Char('h') => {
@@ -1544,10 +1544,10 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
             } else {
                 // Shifted arrow keys
                 match key_event.code {
-                    KeyCode::Up => ui.scroll_one_screen_up(count as u16),
-                    KeyCode::Left => ui.scroll_one_screen_left(count as u16),
-                    KeyCode::Down => ui.scroll_one_screen_down(count as u16),
-                    KeyCode::Right => ui.scroll_one_screen_right(count as u16),
+                    KeyCode::Up => ui.scroll_half_screen_up(count as u16),
+                    KeyCode::Left => ui.scroll_half_screen_left(count as u16),
+                    KeyCode::Down => ui.scroll_half_screen_down(count as u16),
+                    KeyCode::Right => ui.scroll_half_screen_right(count as u16),
 
                     _ => panic!("Expected only arrow keycodes"),
                 }
