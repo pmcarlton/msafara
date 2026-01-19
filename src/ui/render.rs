@@ -672,6 +672,10 @@ fn render_modeline(f: &mut Frame, last_content_line: u16, ui: &mut UI) {
         spans.push(Span::raw(" | "));
     }
     spans.push(Span::raw(ordering_label));
+    if ui.app.tree().is_some() {
+        spans.push(Span::raw(" | "));
+        spans.push(Span::styled("T", Style::new().fg(Color::Green)));
+    }
     if spans.len() == 1 {
         return;
     }
