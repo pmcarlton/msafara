@@ -4,10 +4,11 @@
 
 use std::{
     collections::{HashMap, HashSet},
-    fmt, fs,
+    fmt,
+    fs::{self, File},
     io::{BufWriter, Write},
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
 };
 
 use hex_color::HexColor;
@@ -2256,17 +2257,21 @@ impl App {
             .as_ref()
             .map(|dir| dir.join("mafft"))
             .unwrap_or_else(|| PathBuf::from("mafft"));
-        let output = Command::new(tool_path)
+        let output_file = File::create(&output_path)?;
+        let status = Command::new(tool_path)
+            .arg("--maxiterate")
+            .arg("1000")
+            .arg("--localpair")
             .arg("--treeout")
             .arg("--reorder")
             .arg(&input_path)
-            .output()
+            .stdout(Stdio::from(output_file))
+            .stderr(Stdio::inherit())
+            .status()
             .map_err(|e| TermalError::Format(format!("Failed to run mafft: {}", e)))?;
-        if !output.status.success() {
-            let msg = String::from_utf8_lossy(&output.stderr);
-            return Err(TermalError::Format(format!("mafft failed: {}", msg)));
+        if !status.success() {
+            return Err(TermalError::Format(String::from("mafft failed")));
         }
-        fs::write(&output_path, output.stdout)?;
 
         let tree_path = PathBuf::from(format!("{}.tree", input_path.display()));
         let tree_text = fs::read_to_string(&tree_path)?;

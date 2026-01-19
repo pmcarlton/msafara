@@ -8,6 +8,8 @@ summarizes each function and how to use it.
 Termal opens an alignment file (FASTA, Clustal, or Stockholm) and renders it in
 a scrollable, zoomable viewport. A `.trml` session can be loaded instead of a
 sequence file to restore view-specific state, searches, and notes.
+If a FASTA file has unequal sequence lengths, Termal runs MAFFT automatically
+(`--maxiterate 1000 --localpair`) before opening it.
 
 ## Viewports and Navigation
 

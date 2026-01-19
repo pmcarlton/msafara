@@ -13,6 +13,7 @@
 * Views with per-view ordering/tree/search state, plus `:vc` (create) and `:vs` (switch)
 * View deletion (`:vd`), moving selected sequences to another view (`:mv`), and per-view notes (`|`)
 * View creation from selected sequences (`:vx`) with a prompt showing existing views
+* Automatic MAFFT alignment for non-aligned FASTA inputs (`--maxiterate 1000 --localpair`)
 * README caveat about terminal color schemes affecting ANSI colors
 * Clustal alignment input format (`-f clustal`)
 * Wishlist document for future enhancements
@@ -36,6 +37,7 @@
 * Tree panel auto-hides for non-tree ordering modes and auto-shows for tree order
 * FASTA headers now use the ID token (first whitespace-delimited field)
 * Tools/colors configuration is unified in `.termalconfig` (searched in `$HOME`, then the current directory)
+* MAFFT alignments now use `--maxiterate 1000 --localpair` by default
 * Tree selection now renders with heavy box-drawing for the selected subtree
 * Alignment title now includes the current view name
 * Selection model simplified: header search and tree navigation replace the current selection, and `.` toggles the cursor

@@ -5,8 +5,9 @@
 use std::{
     fmt,
     fs::File,
-    io::{stdout, BufRead, BufReader},
+    io::{stdout, BufRead, BufReader, Write},
     path::{Path, PathBuf},
+    process::{Command, Stdio},
     time::Duration,
 };
 
@@ -161,6 +162,50 @@ fn find_termal_config() -> Option<PathBuf> {
     None
 }
 
+fn needs_alignment(seq_file: &crate::seq::file::SeqFile) -> bool {
+    let mut iter = seq_file.iter();
+    let Some(first) = iter.next() else {
+        return false;
+    };
+    let first_len = first.sequence.len();
+    iter.any(|rec| rec.sequence.len() != first_len)
+}
+
+fn align_fasta_with_mafft(
+    input_path: &Path,
+    mafft_bin_dir: Option<&Path>,
+) -> Result<crate::seq::file::SeqFile, TermalError> {
+    let mafft_bin_dir = mafft_bin_dir.ok_or_else(|| {
+        TermalError::Format(String::from(
+            "mafft not configured. Create .termalconfig in $HOME or current directory with mafft_bin_dir.",
+        ))
+    })?;
+    let mut output_path = std::env::temp_dir();
+    let unique_out = format!("termal-mafft-auto-{}.out.fa", std::process::id());
+    output_path.push(unique_out);
+
+    println!("Unaligned FASTA detected; running mafft --maxiterate 1000 --localpair...");
+    stdout().flush().ok();
+
+    let tool_path = mafft_bin_dir.join("mafft");
+    let output_file = File::create(&output_path)?;
+    let status = Command::new(tool_path)
+        .arg("--maxiterate")
+        .arg("1000")
+        .arg("--localpair")
+        .arg(input_path)
+        .stdout(Stdio::from(output_file))
+        .stderr(Stdio::inherit())
+        .status()
+        .map_err(|e| TermalError::Format(format!("Failed to run mafft: {}", e)))?;
+    if !status.success() {
+        return Err(TermalError::Format(String::from("mafft failed")));
+    }
+    let aligned = read_fasta_file(&output_path)?;
+    std::fs::remove_file(&output_path).ok();
+    Ok(aligned)
+}
+
 pub fn run() -> Result<(), TermalError> {
     env_logger::init();
     info!("Starting log");
@@ -176,13 +221,36 @@ pub fn run() -> Result<(), TermalError> {
     }
 
     if let Some(seq_filename) = &cli.aln_fname {
+        let mut config_err: Option<String> = None;
+        let mut config: Option<TermalConfig> = None;
+        if let Some(path) = find_termal_config() {
+            match TermalConfig::from_file(&path) {
+                Ok(cfg) => config = Some(cfg),
+                Err(e) => {
+                    config_err = Some(format!("Error reading {}: {}", path.display(), e));
+                }
+            }
+        }
         let mut app = if Path::new(seq_filename).extension().and_then(|s| s.to_str())
             == Some("trml")
         {
             App::from_session_file(Path::new(seq_filename))?
         } else {
             let seq_file = match cli.format {
-                SeqFileFormat::FastA => read_fasta_file(seq_filename)?,
+                SeqFileFormat::FastA => {
+                    let seq_file = read_fasta_file(seq_filename)?;
+                    if needs_alignment(&seq_file) {
+                        let aligned = align_fasta_with_mafft(
+                            Path::new(seq_filename),
+                            config
+                                .as_ref()
+                                .and_then(|cfg| cfg.tools.mafft_bin_dir.as_deref()),
+                        )?;
+                        aligned
+                    } else {
+                        seq_file
+                    }
+                }
                 SeqFileFormat::Clustal => read_clustal_file(seq_filename)?,
                 SeqFileFormat::Stockholm => read_stockholm_file(seq_filename)?,
             };
@@ -223,15 +291,13 @@ pub fn run() -> Result<(), TermalError> {
             app
         };
 
-        if let Some(path) = find_termal_config() {
-            match TermalConfig::from_file(&path) {
-                Ok(config) => {
-                    app.set_search_color_config(config.search_colors);
-                    app.set_emboss_bin_dir(config.tools.emboss_bin_dir);
-                    app.set_mafft_bin_dir(config.tools.mafft_bin_dir);
-                }
-                Err(e) => app.error_msg(format!("Error reading {}: {}", path.display(), e)),
-            }
+        if let Some(msg) = config_err.take() {
+            app.error_msg(msg);
+        }
+        if let Some(config) = config.take() {
+            app.set_search_color_config(config.search_colors);
+            app.set_emboss_bin_dir(config.tools.emboss_bin_dir);
+            app.set_mafft_bin_dir(config.tools.mafft_bin_dir);
         }
         app.refresh_saved_searches_public();
         app.recompute_current_seq_search();
