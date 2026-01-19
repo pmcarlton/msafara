@@ -177,7 +177,7 @@ fn align_fasta_with_mafft(
 ) -> Result<crate::seq::file::SeqFile, TermalError> {
     let mafft_bin_dir = mafft_bin_dir.ok_or_else(|| {
         TermalError::Format(String::from(
-            "mafft not configured. Create .termalconfig in $HOME or current directory with mafft_bin_dir.",
+            "Unaligned FASTA requires mafft. Install mafft and set mafft_bin_dir in .termalconfig.",
         ))
     })?;
     let mut output_path = std::env::temp_dir();

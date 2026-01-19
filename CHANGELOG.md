@@ -38,6 +38,7 @@
 * FASTA headers now use the ID token (first whitespace-delimited field)
 * Tools/colors configuration is unified in `.termalconfig` (searched in `$HOME`, then the current directory)
 * MAFFT alignments now use `--maxiterate 1000 --localpair` by default
+* Opening unaligned FASTA now errors if MAFFT is not configured
 * Tree selection now renders with heavy box-drawing for the selected subtree
 * Alignment title now includes the current view name
 * Selection model simplified: header search and tree navigation replace the current selection, and `.` toggles the cursor
