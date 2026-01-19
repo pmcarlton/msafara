@@ -25,6 +25,7 @@
 * Tree navigation mode (`:tn`) with subtree selection and `:rs` reject for selected labels
 * Tree navigation Shift-Up/Down for half-screen scrolling without changing selection
 * Tree navigation Shift-Left/Right for horizontal half-screen scrolling without changing selection
+* Selection ranges for `:sn`, selection by current sequence match (`:sm`), and selection invert (`I`)
 
 ### Changed
 

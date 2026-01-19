@@ -1502,6 +1502,23 @@ impl App {
         if let Some(id) = self.current_view_ids.get(rank).copied() {
             self.set_selection_from_ids(&[id]);
         }
+        self.tree_selection_range = None;
+        self.update_tree_lines_for_selection();
+        Ok(())
+    }
+
+    pub fn select_ranks(&mut self, ranks: &[usize]) -> Result<(), TermalError> {
+        if ranks
+            .iter()
+            .any(|rank| *rank >= self.current_view_ids.len())
+        {
+            return Err(TermalError::Format(String::from(
+                "Sequence number out of range",
+            )));
+        }
+        self.tree_selection_range = None;
+        self.set_selection_from_ranks(ranks);
+        self.update_tree_lines_for_selection();
         Ok(())
     }
 
@@ -1580,6 +1597,40 @@ impl App {
             .enumerate()
             .filter_map(|(rank, id)| self.selected_ids.contains(id).then_some(rank))
             .collect()
+    }
+
+    pub fn invert_selection(&mut self) {
+        let ids: Vec<usize> = self
+            .current_view_ids
+            .iter()
+            .copied()
+            .filter(|id| !self.selected_ids.contains(id))
+            .collect();
+        self.tree_selection_range = None;
+        self.set_selection_from_ids(&ids);
+        self.update_tree_lines_for_selection();
+    }
+
+    pub fn select_sequences_with_current_match(&mut self) -> Result<usize, TermalError> {
+        let state = self
+            .seq_search_state
+            .as_ref()
+            .ok_or_else(|| TermalError::Format(String::from("No current sequence search")))?;
+        let ranks: Vec<usize> = state
+            .spans_by_seq
+            .iter()
+            .enumerate()
+            .filter_map(|(rank, spans)| (!spans.is_empty()).then_some(rank))
+            .collect();
+        self.tree_selection_range = None;
+        if ranks.is_empty() {
+            self.clear_selection();
+            self.update_tree_lines_for_selection();
+            return Ok(0);
+        }
+        self.set_selection_from_ranks(&ranks);
+        self.update_tree_lines_for_selection();
+        Ok(ranks.len())
     }
 
     pub fn toggle_selection_on_cursor(&mut self) {
@@ -3356,6 +3407,29 @@ mod tests {
         app.select_label_by_rank(1).unwrap();
         assert_eq!(app.cursor_rank(), Some(1));
         assert!(app.is_label_selected(1));
+    }
+
+    #[test]
+    fn test_invert_selection() {
+        let hdrs = vec![String::from("R1"), String::from("R2"), String::from("R3")];
+        let seqs = vec![String::from("AA"), String::from("BB"), String::from("CC")];
+        let aln = Alignment::from_vecs(hdrs, seqs);
+        let mut app = App::new("TEST", aln, None);
+        app.select_label_by_rank(0).unwrap();
+        app.invert_selection();
+        assert_eq!(app.selection_ranks(), vec![1, 2]);
+    }
+
+    #[test]
+    fn test_select_sequences_with_current_match() {
+        let hdrs = vec![String::from("R1"), String::from("R2"), String::from("R3")];
+        let seqs = vec![String::from("AA"), String::from("BA"), String::from("CC")];
+        let aln = Alignment::from_vecs(hdrs, seqs);
+        let mut app = App::new("TEST", aln, None);
+        app.regex_search_sequences("A");
+        let count = app.select_sequences_with_current_match().unwrap();
+        assert_eq!(count, 2);
+        assert_eq!(app.selection_ranks(), vec![0, 1]);
     }
 
     #[test]

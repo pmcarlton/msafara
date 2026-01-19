@@ -25,6 +25,9 @@ with `.`. Selections are explicit, per-view sets of sequences that actions
 operate on; header search and tree navigation replace the current selection.
 The selection can be cleared with `X`, and the cursor can be cleared with
 `:cc`.
+Use `:sn` with single numbers or ranges (e.g. `:sn 1,4,6-8`) to select by
+displayed number, `:sm` to select sequences containing the current sequence
+match, and `I` to invert the selection.
 
 ## Searching Sequence Headers
 

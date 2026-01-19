@@ -664,15 +664,25 @@ fn handle_command(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
                 }
             } else if cmd.trim_start().starts_with("sn") {
                 let arg = cmd.trim_start()[2..].trim();
-                match arg.parse::<usize>() {
-                    Ok(num) if num > 0 => {
-                        let rank = num - 1;
-                        match ui.select_label_by_rank(rank) {
-                            Ok(()) => ui.app.info_msg(format!("Selected #{}", num)),
-                            Err(e) => ui.app.error_msg(format!("Select failed: {}", e)),
+                match parse_rank_list(arg) {
+                    Ok(ranks) => {
+                        if let Err(e) = ui.app.select_ranks(&ranks) {
+                            ui.app.error_msg(format!("Select failed: {}", e));
+                        } else if let Some(first) = ranks.first().copied() {
+                            ui.jump_to_line(first as u16);
+                            ui.app
+                                .info_msg(format!("Selected {} sequence(s)", ranks.len()));
                         }
                     }
-                    _ => ui.app.warning_msg("Usage: :sn <number>"),
+                    Err(msg) => ui.app.warning_msg(msg),
+                }
+            } else if cmd.trim() == "sm" {
+                match ui.app.select_sequences_with_current_match() {
+                    Ok(count) if count > 0 => {
+                        ui.app.info_msg(format!("Selected {} sequence(s)", count))
+                    }
+                    Ok(_) => ui.app.warning_msg("No sequence matches"),
+                    Err(e) => ui.app.warning_msg(format!("Select failed: {}", e)),
                 }
             } else if cmd.trim_start().starts_with("rn") {
                 let arg = cmd.trim_start()[2..].trim();
@@ -1649,6 +1659,10 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
         }
         KeyCode::Char('X') => {
             ui.app.clear_selection();
+            mark_dirty(ui);
+        }
+        KeyCode::Char('I') => {
+            ui.app.invert_selection();
             mark_dirty(ui);
         }
 

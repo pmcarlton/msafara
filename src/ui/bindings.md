@@ -50,7 +50,8 @@ P            : save current search and clear its highlights
 :ru<Ret>     : reject unmatched sequences (y/n to confirm)
 :rm<Ret>     : reject matched sequences (y/n to confirm)
 :rs<Ret>     : reject selected sequences
-:sn<Ret>     : select header by displayed number (e.g., :sn 31)
+:sn<Ret>     : select headers by number/range (e.g., :sn 31 or :sn 1,4,6-8)
+:sm<Ret>     : select sequences containing the current sequence match
 :rn<Ret>     : reject by displayed number(s) (e.g., :rn 1,4,6-8)
 :ss<Ret>     : save session to .trml (prompted, with overwrite confirmation)
 :sl<Ret>     : load session from .trml (choose from list)
@@ -95,6 +96,7 @@ i: toggle inverse/direct video
 x: select cursor line (clears previous selection)
 A: select all in view
 X: clear selection
+I: invert selection
 .: toggle cursor highlight
 :cc<Ret> : clear cursor highlight
 
