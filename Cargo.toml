@@ -1,5 +1,5 @@
 [package]
-name = "msafara-msa"
+name = "msafara"
 version = "1.3.0"
 edition = "2021"
 license = "MIT"

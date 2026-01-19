@@ -11,7 +11,7 @@ The binary name is `msafara`.
 ##  Installation
 
 ```bash
-cargo install msafara-msa
+cargo install msafara
 ```
 
 ---

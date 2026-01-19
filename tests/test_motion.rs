@@ -6,7 +6,7 @@ mod common;
 
 use crate::common::utils;
 
-use msafara_msa::ui::key_handling;
+use msafara::ui::key_handling;
 
 #[test]
 fn cap_g_moves_to_bottom() {

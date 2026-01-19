@@ -206,7 +206,7 @@ msafara-vX.Y.Z-<target>.zip       # windows
 
 ## 11) Post-release verification
 
-* [ ] `cargo install msafara-msa` installs `X.Y.Z` on a clean machine/container.
+* [ ] `cargo install msafara` installs `X.Y.Z` on a clean machine/container.
 * [ ] Each downloadable binary runs `--version` and opens `data/example-1.msa`.
 * [ ] GitHub Release has all assets + checksums; CI badges green.
 * [ ] crates.io page shows correct README and categories.
@@ -299,6 +299,6 @@ cargo publish
 * [ ] crates.io shows `X.Y.Z`
 * [ ] docs.rs built
 * [ ] Zenodo archived & DOI visible
-* [ ] `cargo install msafara-msa` works
+* [ ] `cargo install msafara` works
 
 ---

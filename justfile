@@ -11,7 +11,7 @@ test:
 	cargo test --color=always --no-fail-fast
 
 # Make a release for GitHub 
-crate := "msafara-msa"
+crate := "msafara"
 bin := "msafara"
 version := `cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].version'`
 dist := "dist"

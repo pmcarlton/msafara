@@ -6,8 +6,8 @@ mod common;
 
 use crate::common::utils;
 
-use msafara_msa::alignment::Alignment;
-use msafara_msa::app::App;
+use msafara::alignment::Alignment;
+use msafara::app::App;
 
 #[test]
 fn renders_without_panic() {
