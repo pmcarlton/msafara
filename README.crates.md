@@ -1,9 +1,10 @@
-# termal
+# msafara
 
-`termal` is a terminal-based viewer for multiple sequence alignments (MSAs).  It
+`msafara` is a terminal-based viewer for multiple sequence alignments (MSAs).  It
 provides a smooth interface to explore alignments directly from the
 command line — especially useful when working over SSH or in headless
 environments.
+The binary name remains `termal` until the rename is complete.
 
 ---
 

@@ -1,16 +1,16 @@
-# Termal User Guide
+# Msafara User Guide
 
-Termal is a terminal UI for exploring multiple sequence alignments. This guide
+Msafara is a terminal UI for exploring multiple sequence alignments. This guide
 summarizes each function and how to use it.
 
 ## Launch and Files
 
-Termal opens an alignment file (FASTA, Clustal, or Stockholm) and renders it in
+Msafara opens an alignment file (FASTA, Clustal, or Stockholm) and renders it in
 a scrollable, zoomable viewport. A `.trml` session can be loaded instead of a
 sequence file to restore view-specific state, searches, and notes.
-If a FASTA file has unequal sequence lengths, Termal runs MAFFT automatically
+If a FASTA file has unequal sequence lengths, Msafara runs MAFFT automatically
 (`--maxiterate 1000 --localpair`) before opening it; if MAFFT is not configured,
-Termal reports an error and refuses to open the file.
+Msafara reports an error and refuses to open the file.
 
 ## Viewports and Navigation
 
@@ -92,5 +92,5 @@ notes. Session files are JSON and use the `.trml` extension.
 
 ## Color and Tools Configuration
 
-`.termalconfig` configures search colors and tool locations. Termal searches
+`.termalconfig` configures search colors and tool locations. Msafara searches
 for it in `$HOME` and then the current directory.

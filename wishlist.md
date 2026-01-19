@@ -1,6 +1,6 @@
 # Wishlist
 
-potential enhancements and new features that would make termal faster, clearer, or more useful
+potential enhancements and new features that would make msafara faster, clearer, or more useful
 
 - [x] SVG export of the current view (alignment pane + labels + consensus), with configurable scale and color theme.
 - [ ] Sequence annotation tracks (domains, motifs, low complexity) shown as a dedicated panel or overlay.

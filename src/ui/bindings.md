@@ -1,6 +1,6 @@
 # Main Key Bindings
 
-Run `termal -b` to see this message if it doesn't fit on screen.
+Run `termal -b` to see this message if it doesn't fit on screen (binary rename pending).
 
 Arguments (counts, search patterns), match index, and ordering mode are shown in the modeline.
 
