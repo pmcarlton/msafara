@@ -320,22 +320,6 @@ fn parse_rank_list(arg: &str) -> Result<Vec<usize>, String> {
     Ok(result)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::parse_rank_list;
-
-    #[test]
-    fn parse_rank_list_single_and_range() {
-        let result = parse_rank_list("1,4,6-8").unwrap();
-        assert_eq!(result, vec![0, 3, 5, 6, 7]);
-    }
-
-    #[test]
-    fn parse_rank_list_rejects_zero() {
-        assert!(parse_rank_list("0").is_err());
-    }
-}
-
 fn handle_pending_count_key(ui: &mut UI, key_event: KeyEvent, count: usize) -> bool {
     let mut done = false;
     match key_event.code {
@@ -394,7 +378,7 @@ fn handle_label_search(ui: &mut UI, key_event: KeyEvent, pattern: &str) {
         KeyCode::Enter => {
             ui.app.regex_search_labels(pattern);
             ui.input_mode = InputMode::Normal;
-            if let Some(_) = &ui.app.search_state {
+            if ui.app.search_state.is_some() {
                 // Could be a malformed regex
                 ui.jump_to_next_lbl_match(0);
             }
@@ -475,11 +459,7 @@ fn handle_command(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
             let cmd = editor.text();
             ui.input_mode = InputMode::Normal;
             if cmd.trim() == "s" {
-                let selected = if ui.app.saved_searches().is_empty() {
-                    0
-                } else {
-                    0
-                };
+                let selected = 0;
                 ui.input_mode = InputMode::SearchList { selected };
             } else if cmd.trim() == "es" {
                 let default_path = format!("{}.svg", ui.app.filename);
@@ -1350,9 +1330,7 @@ fn handle_session_list(ui: &mut UI, key_event: KeyEvent, mut selected: usize, fi
             mark_dirty(ui);
         }
         KeyCode::Up => {
-            if selected > 0 {
-                selected -= 1;
-            }
+            selected = selected.saturating_sub(1);
             ui.input_mode = InputMode::SessionList {
                 selected,
                 files: files.to_vec(),
@@ -1709,7 +1687,7 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
             mark_dirty(ui);
         }
         KeyCode::Char('p') => {
-            ui.app.move_cursor(-1 * count as isize);
+            ui.app.move_cursor(-(count as isize));
             mark_dirty(ui);
         }
         KeyCode::Char('.') => {
@@ -1721,7 +1699,7 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
             mark_dirty(ui);
         }
         KeyCode::Char('[') => {
-            ui.jump_to_next_seq_match(-1 * count as i16);
+            ui.jump_to_next_seq_match(-(count as i16));
             mark_dirty(ui);
         }
 
@@ -1914,5 +1892,21 @@ fn dispatch_command(ui: &mut UI, key_event: KeyEvent, count_arg: Option<usize>) 
             // launch the desired action. Not sure it's worth it, frankly.
             // ui.warning_msg(format!("'{}' not bound", c));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_rank_list;
+
+    #[test]
+    fn parse_rank_list_single_and_range() {
+        let result = parse_rank_list("1,4,6-8").unwrap();
+        assert_eq!(result, vec![0, 3, 5, 6, 7]);
+    }
+
+    #[test]
+    fn parse_rank_list_rejects_zero() {
+        assert!(parse_rank_list("0").is_err());
     }
 }

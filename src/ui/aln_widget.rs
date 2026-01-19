@@ -58,7 +58,7 @@ impl<'a> Widget for SeqPane<'a> {
             let seq_index = self.ordering[i];
             let seq = self.sequences[seq_index].as_bytes();
             let highlight_color = |col: usize, ch: char| {
-                highlight_color(&self.highlights, &self.highlight_config, seq_index, col, ch)
+                highlight_color(self.highlights, &self.highlight_config, seq_index, col, ch)
             };
             let underline_row = self
                 .underline_seq_index
@@ -141,7 +141,7 @@ impl<'a> Widget for SeqPaneZoomedOut<'a> {
             let seq_index = self.ordering[i];
             let seq_bytes = self.sequences[seq_index].as_bytes();
             let highlight_color = |col: usize, ch: char| {
-                highlight_color(&self.highlights, &self.highlight_config, seq_index, col, ch)
+                highlight_color(self.highlights, &self.highlight_config, seq_index, col, ch)
             };
             let underline_row = self
                 .underline_seq_index

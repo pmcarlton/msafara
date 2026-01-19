@@ -20,7 +20,7 @@ fn test_label_search() {
         "tests/data/test-motion.msa",
         SCREEN_WIDTH,
         SCREEN_HEIGHT,
-        |mut ui, terminal| {
+        |ui, terminal| {
             let key_double_quote = utils::keypress('"');
             let last_line_y = SCREEN_HEIGHT - 1;
 
@@ -28,11 +28,9 @@ fn test_label_search() {
 
             key_handling::handle_key_press(ui, key_double_quote);
             // Don't forget to draw the UI after the key event...
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             assert!(
                 last_line.contains("Label search:"),
@@ -45,11 +43,9 @@ fn test_label_search() {
             key_handling::handle_key_press(ui, utils::keypress('K'));
             key_handling::handle_key_press(ui, utils::keypress('F'));
             key_handling::handle_key_press(ui, utils::keypress('J'));
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             assert!(
                 last_line.contains("Label search: KFJ"),
@@ -63,11 +59,9 @@ fn test_label_search() {
 
             let first_match_line_y = SCREEN_HEIGHT - 14;
             key_handling::handle_key_press(ui, KeyCode::Enter.into());
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let first_match_line = utils::screen_line(&buffer, first_match_line_y);
+            let first_match_line = utils::screen_line(buffer, first_match_line_y);
 
             assert!(
                 first_match_line.contains("219│KFJ"), // might as well check line #
@@ -76,7 +70,7 @@ fn test_label_search() {
                 first_match_line
             );
 
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             assert!(
                 last_line.contains("match #1/8"),
@@ -104,11 +98,9 @@ fn test_label_search() {
             // Pressing Esc should clear modeline
 
             key_handling::handle_key_press(ui, KeyCode::Esc.into());
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             let expected = "Saved: - | Current: -";
             assert!(
@@ -128,7 +120,7 @@ fn test_missing_label_search() {
         "tests/data/test-motion.msa",
         SCREEN_WIDTH,
         SCREEN_HEIGHT,
-        |mut ui, terminal| {
+        |ui, terminal| {
             let key_double_quote = utils::keypress('"');
             let last_line_y = SCREEN_HEIGHT - 1;
 
@@ -139,11 +131,9 @@ fn test_missing_label_search() {
             key_handling::handle_key_press(ui, utils::keypress('I'));
             key_handling::handle_key_press(ui, utils::keypress('S'));
             key_handling::handle_key_press(ui, utils::keypress('S'));
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             let expected = "Label search: MISS";
             assert!(
@@ -156,11 +146,9 @@ fn test_missing_label_search() {
             // Pressing Enter should cause "No match." to appear in the modeline
 
             key_handling::handle_key_press(ui, KeyCode::Enter.into());
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             let expected = "No match.";
             assert!(
@@ -173,11 +161,9 @@ fn test_missing_label_search() {
             // Pressing Esc should clear modeline
 
             key_handling::handle_key_press(ui, KeyCode::Esc.into());
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             let expected = "Saved: - | Current: -";
             assert!(
@@ -196,7 +182,7 @@ fn test_reject_label_match_in_tree_order() {
         "tests/data/test-motion.msa",
         SCREEN_WIDTH,
         SCREEN_HEIGHT,
-        |mut ui, terminal| {
+        |ui, terminal| {
             let before = ui.num_sequences();
             ui.set_user_ordering_from_headers().unwrap();
             ui.show_tree_panel(true);
@@ -217,11 +203,9 @@ fn test_reject_label_match_in_tree_order() {
             key_handling::handle_key_press(ui, KeyCode::Enter.into());
             key_handling::handle_key_press(ui, utils::keypress('n'));
 
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, SCREEN_HEIGHT - 1);
+            let last_line = utils::screen_line(buffer, SCREEN_HEIGHT - 1);
             assert!(
                 last_line.contains("View: filtered"),
                 "Expected filtered view after rejection, got: {}",
@@ -266,7 +250,7 @@ fn test_label_search_del() {
         "tests/data/test-motion.msa",
         SCREEN_WIDTH,
         SCREEN_HEIGHT,
-        |mut ui, terminal| {
+        |ui, terminal| {
             let key_double_quote = utils::keypress('"');
             let last_line_y = SCREEN_HEIGHT - 1;
 
@@ -277,11 +261,9 @@ fn test_label_search_del() {
             key_handling::handle_key_press(ui, utils::keypress('I'));
             key_handling::handle_key_press(ui, utils::keypress('S'));
             key_handling::handle_key_press(ui, utils::keypress('S'));
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             let expected = "Label search: MISS";
             assert!(
@@ -296,11 +278,9 @@ fn test_label_search_del() {
             key_handling::handle_key_press(ui, KeyCode::Delete.into());
             key_handling::handle_key_press(ui, utils::keypress('T'));
 
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             let expected = "Label search: MIST";
             assert!(
@@ -313,11 +293,9 @@ fn test_label_search_del() {
             // Pressing Esc should clear modeline
 
             key_handling::handle_key_press(ui, KeyCode::Esc.into());
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             let expected = "Saved: - | Current: -";
             assert!(
@@ -338,7 +316,7 @@ fn test_label_search_malformed() {
         "tests/data/test-motion.msa",
         SCREEN_WIDTH,
         SCREEN_HEIGHT,
-        |mut ui, terminal| {
+        |ui, terminal| {
             let key_double_quote = utils::keypress('"');
             let last_line_y = SCREEN_HEIGHT - 1;
 
@@ -348,11 +326,9 @@ fn test_label_search_malformed() {
             key_handling::handle_key_press(ui, key_double_quote);
             key_handling::handle_key_press(ui, utils::keypress('['));
             key_handling::handle_key_press(ui, KeyCode::Enter.into());
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             let expected = "ERROR: Malformed regex";
             assert!(
@@ -365,11 +341,9 @@ fn test_label_search_malformed() {
             // Pressing Esc should clear modeline
 
             key_handling::handle_key_press(ui, KeyCode::Esc.into());
-            terminal
-                .draw(|f| render::render_ui(f, &mut ui))
-                .expect("update");
+            terminal.draw(|f| render::render_ui(f, ui)).expect("update");
             let buffer = terminal.backend().buffer();
-            let last_line = utils::screen_line(&buffer, last_line_y);
+            let last_line = utils::screen_line(buffer, last_line_y);
 
             let expected = "Saved: - | Current: -";
             assert!(

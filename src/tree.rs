@@ -36,8 +36,8 @@ pub fn tree_lines_and_order_with_selection(
     root: &TreeNode,
     selection: Option<(usize, usize)>,
 ) -> Result<(Vec<String>, Vec<String>), TermalError> {
-    let mut root = collapse_unary(root.clone());
-    let (node_map, leaves) = assign_rows_and_depths(&mut root);
+    let root = collapse_unary(root.clone());
+    let (node_map, leaves) = assign_rows_and_depths(&root);
     if leaves.is_empty() {
         return Ok((Vec::new(), Vec::new()));
     }

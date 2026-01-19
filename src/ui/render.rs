@@ -276,7 +276,7 @@ fn make_layout(f: &Frame, ui: &UI) -> Panes {
     let lbl_pane = Layout::new(
         Direction::Horizontal,
         vec![
-            Constraint::Length(lbl_num_pane_num_cols.try_into().unwrap()),
+            Constraint::Length(lbl_num_pane_num_cols),
             Constraint::Fill(1),
             Constraint::Length(3),
         ],
@@ -446,7 +446,7 @@ fn render_alignment_pane(f: &mut Frame, aln_chunk: Rect, ui: &UI) {
 
     f.render_widget(aln_block, aln_chunk);
 
-    let style_lut = build_style_lut(&ui);
+    let style_lut = build_style_lut(ui);
     let (highlights, highlight_config) = ui.search_highlights();
     let underline_seq_index = ui.app.cursor_rank();
     let base_style = Style::default().bg(Color::Black);
@@ -920,8 +920,8 @@ fn render_notes_dialog(f: &mut Frame, dialog_chunk: Rect, ui: &UI) {
 
     let max_width = dialog_chunk.width.saturating_sub(2);
     let max_height = dialog_chunk.height.saturating_sub(2);
-    let width = max_width.min(40).max(1);
-    let height = max_height.min(10).max(1);
+    let width = max_width.clamp(1, 40);
+    let height = max_height.clamp(1, 10);
     let x = dialog_chunk.x + (dialog_chunk.width.saturating_sub(width + 2)) / 2;
     let y = dialog_chunk.y + (dialog_chunk.height.saturating_sub(height + 2)) / 2;
     let notes_chunk = Rect {

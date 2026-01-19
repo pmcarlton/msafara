@@ -995,8 +995,7 @@ impl App {
             .iter()
             .cloned()
             .zip(alignment.sequences.iter().cloned())
-            .enumerate()
-            .map(|(_id, (header, sequence))| SeqRecord { header, sequence })
+            .map(|(header, sequence)| SeqRecord { header, sequence })
             .collect();
         let cur_msg = CurrentMessage {
             prefix: String::from(""),
@@ -1187,9 +1186,8 @@ impl App {
         self.records = session
             .headers
             .into_iter()
-            .zip(session.sequences.into_iter())
-            .enumerate()
-            .map(|(_id, (header, sequence))| SeqRecord { header, sequence })
+            .zip(session.sequences)
+            .map(|(header, sequence)| SeqRecord { header, sequence })
             .collect();
         let original_ids: Vec<usize> = (0..self.records.len()).collect();
         self.alignment = self.build_alignment_for_ids(&original_ids);
@@ -1289,7 +1287,7 @@ impl App {
             .views
             .get("rejected")
             .map(|view| view.sequence_ids.iter().copied().collect())
-            .unwrap_or_else(HashSet::new);
+            .unwrap_or_default();
 
         self.search_registry = SearchRegistry::new(self.search_color_config.palette.clone());
         for entry in session.saved_searches {
@@ -1524,7 +1522,7 @@ impl App {
 
     pub fn current_label_match_screenlinenum(&self) -> Option<usize> {
         if let Some(state) = &self.search_state {
-            if state.match_linenums.len() > 0 {
+            if !state.match_linenums.is_empty() {
                 Some(self.rank_to_screenline(state.match_linenums[state.current]))
             } else {
                 None
@@ -2080,6 +2078,7 @@ impl App {
         removed
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn recompute_search_state(
         &mut self,
         current_label_header: Option<String>,
@@ -3169,14 +3168,14 @@ mod tests {
 
     #[test]
     fn test_order_00() {
-        assert_eq!(vec![2, 1, 0], order(&vec![20.0, 15.0, 10.0]));
+        assert_eq!(vec![2, 1, 0], order(&[20.0, 15.0, 10.0]));
     }
 
     #[test]
     fn test_order_05() {
         assert_eq!(
             vec![3, 2, 0, 1, 4],
-            order(&vec![12.23, 34.89, 7.0, -23.2, 100.0]),
+            order(&[12.23, 34.89, 7.0, -23.2, 100.0]),
         );
     }
 
@@ -3662,7 +3661,7 @@ mod tests {
         app.regex_search_sequences("AA");
         app.set_label_matches_from_tree(vec![0, 2], (0, 2));
 
-        let mut path = PathBuf::from(std::env::temp_dir());
+        let mut path = std::env::temp_dir();
         path.push("msafara-test-session.msfr");
         let _ = std::fs::remove_file(&path);
         app.save_session(&path).unwrap();
