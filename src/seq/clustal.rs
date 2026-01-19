@@ -85,7 +85,7 @@ mod tests {
     #[test]
     fn test_read_clustal_ignores_stop_codons() {
         let mut path = std::env::temp_dir();
-        path.push(format!("termal-test-clustal-{}.aln", std::process::id()));
+        path.push(format!("msafara-test-clustal-{}.aln", std::process::id()));
         let content = concat!(
             "CLUSTAL W (1.83) multiple sequence alignment\n",
             "\n",

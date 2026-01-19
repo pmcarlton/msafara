@@ -11,8 +11,8 @@ test:
 	cargo test --color=always --no-fail-fast
 
 # Make a release for GitHub 
-crate := "termal-msa"
-bin := "termal"
+crate := "msafara-msa"
+bin := "msafara"
 version := `cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].version'`
 dist := "dist"
 pkg := bin + "-" + version + "-" + target

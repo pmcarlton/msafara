@@ -4,14 +4,14 @@
 provides a smooth interface to explore alignments directly from the
 command line — especially useful when working over SSH or in headless
 environments.
-The binary name remains `termal` until the rename is complete.
+The binary name is `msafara`.
 
 ---
 
 ##  Installation
 
 ```bash
-cargo install termal-msa
+cargo install msafara-msa
 ```
 
 ---
@@ -21,14 +21,14 @@ cargo install termal-msa
 Once installed, run:
 
 ```bash
-termal <my-alignment>
+msafara <my-alignment>
 ```
 where `my-alignment` is a multiple alignment in Fasta or Stockholm format.
 
 For help, run
 
 ```bash
-termal -h
+msafara -h
 ```
 
 Or press `?` while running to see key bindings.
@@ -54,9 +54,9 @@ Best results in a dark-themed terminal.
 ## More Info
 
 - Source, releases, and test data:  
-  [https://github.com/sib-swiss/termal](https://github.com/sib-swiss/termal)
+  [https://github.com/sib-swiss/msafara](https://github.com/sib-swiss/msafara)
 
-- Platform-specific binaries (Linux, macOS, Windows) available on the [Releases](https://github.com/sib-swiss/termal/releases) page.
+- Platform-specific binaries (Linux, macOS, Windows) available on the [Releases](https://github.com/sib-swiss/msafara/releases) page.
 
 ---
 

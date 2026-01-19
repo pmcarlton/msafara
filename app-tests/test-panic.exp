@@ -15,14 +15,14 @@ set pwt $params(w)
 set timeout $params(t)
 
 
-spawn ../target/debug/termal --poll-wait-time $pwt -w 15 -t 9 --panic data/test-aln-02.fas
+spawn ../target/debug/msafara --poll-wait-time $pwt -w 15 -t 9 --panic data/test-aln-02.fas
 send "q\r"
 expect eof
 
 # Gets the exit code of the spawned process, so that this script fails IFF it 
 # did. 
 catch wait result 
-puts "termal exit code: $result"
+puts "msafara exit code: $result"
 set prog_exit_code [lindex $result 3] 
 if { $prog_exit_code > 0 } {
 	# We're expecting a failure

@@ -2,7 +2,7 @@
 
 ## Entrypoint, Main Loop, State Model
 
-- `src/main.rs:main` calls `termal_msa::run()` in `src/runner.rs` for msafara.
+- `src/main.rs:main` calls `msafara_msa::run()` in `src/runner.rs` for msafara.
 - `src/runner.rs:run` parses CLI (`Cli`), loads sequences (`read_fasta_file`/`read_stockholm_file`),
   builds `Alignment::from_file`, constructs `App::new`, then builds `UI::new`.
 - Main event loop is in `src/runner.rs:run`:

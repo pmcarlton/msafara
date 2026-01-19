@@ -2,7 +2,7 @@
 #
 
 
-spawn ../target/debug/termal -i data/test-aln-04.fas
+spawn ../target/debug/msafara -i data/test-aln-04.fas
 
 expect "name: data/test-aln-04.fas"
 expect "nb_sequences: 226"

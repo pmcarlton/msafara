@@ -6,7 +6,7 @@ summarizes each function and how to use it.
 ## Launch and Files
 
 Msafara opens an alignment file (FASTA, Clustal, or Stockholm) and renders it in
-a scrollable, zoomable viewport. A `.trml` session can be loaded instead of a
+a scrollable, zoomable viewport. A `.msfr` session can be loaded instead of a
 sequence file to restore view-specific state, searches, and notes.
 If a FASTA file has unequal sequence lengths, Msafara runs MAFFT automatically
 (`--maxiterate 1000 --localpair`) before opening it; if MAFFT is not configured,
@@ -88,9 +88,9 @@ current color/selection state. Output filenames can be edited before writing.
 ## Session Save/Load
 
 Sessions (`:ss`, `:sl`) save and restore alignment state, views, searches, and
-notes. Session files are JSON and use the `.trml` extension.
+notes. Session files are JSON and use the `.msfr` extension.
 
 ## Color and Tools Configuration
 
-`.termalconfig` configures search colors and tool locations. Msafara searches
+`.msafara.config` configures search colors and tool locations. Msafara searches
 for it in `$HOME` and then the current directory.

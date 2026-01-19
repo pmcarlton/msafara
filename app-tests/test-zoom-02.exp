@@ -13,7 +13,7 @@ set pwt $params(w)
 set timeout $params(t)
 
 
-spawn ../target/debug/termal --poll-wait-time $pwt -LBC -w 11 -t 3 --no-zoom-box data/test-aln-01.fas
+spawn ../target/debug/msafara --poll-wait-time $pwt -LBC -w 11 -t 3 --no-zoom-box data/test-aln-01.fas
 expect "AAAAAAAAA"
 send "z"
 expect {

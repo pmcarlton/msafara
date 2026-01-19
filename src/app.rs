@@ -1088,7 +1088,7 @@ impl App {
             .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or(file_name);
-        cwd.join(format!("{}.trml", stem))
+        cwd.join(format!("{}.msfr", stem))
     }
 
     pub fn save_session(&mut self, path: &Path) -> Result<(), TermalError> {
@@ -1880,7 +1880,7 @@ impl App {
                 .map_err(|e| format!("Malformed regex {}.", e))?,
             SearchKind::Emboss if self.emboss_bin_dir.is_none() => {
                 return Err(String::from(
-                    "Emboss search unavailable. Create .termalconfig in $HOME or current directory with emboss_bin_dir.",
+                    "Emboss search unavailable. Create .msafara.config in $HOME or current directory with emboss_bin_dir.",
                 ));
             }
             SearchKind::Emboss => compute_emboss_search_state(
@@ -1956,7 +1956,7 @@ impl App {
         }
         if self.emboss_bin_dir.is_none() {
             self.error_msg(
-                "Emboss search unavailable. Create .termalconfig in $HOME or current directory with emboss_bin_dir.",
+                "Emboss search unavailable. Create .msafara.config in $HOME or current directory with emboss_bin_dir.",
             );
             self.clear_seq_search();
             return;
@@ -2250,7 +2250,7 @@ impl App {
                 .unwrap_or(0);
             let mut tmp = std::env::temp_dir();
             tmp.push(format!(
-                "termal-reject-{}-{}.bak",
+                "msafara-reject-{}-{}.bak",
                 std::process::id(),
                 stamp
             ));
@@ -2418,16 +2418,16 @@ impl App {
     pub fn realign_with_mafft(&mut self) -> Result<(), TermalError> {
         if self.mafft_bin_dir.is_none() {
             return Err(TermalError::Format(String::from(
-                "mafft not configured. Create .termalconfig in $HOME or current directory with mafft_bin_dir.",
+                "mafft not configured. Create .msafara.config in $HOME or current directory with mafft_bin_dir.",
             )));
         }
         let mut input_path = std::env::temp_dir();
-        let unique = format!("termal-mafft-{}.fa", std::process::id());
+        let unique = format!("msafara-mafft-{}.fa", std::process::id());
         input_path.push(unique);
         self.write_alignment_fasta(&input_path)?;
 
         let mut output_path = std::env::temp_dir();
-        let unique_out = format!("termal-mafft-{}.out.fa", std::process::id());
+        let unique_out = format!("msafara-mafft-{}.out.fa", std::process::id());
         output_path.push(unique_out);
 
         let tool_path = self
@@ -2968,7 +2968,7 @@ fn compute_emboss_search_state(
 ) -> Result<SeqSearchState, TermalError> {
     let emboss_bin_dir = emboss_bin_dir.ok_or_else(|| {
         TermalError::Format(String::from(
-            "Emboss tools not configured. Create .termalconfig in $HOME or current directory with emboss_bin_dir.",
+            "Emboss tools not configured. Create .msafara.config in $HOME or current directory with emboss_bin_dir.",
         ))
     })?;
     let is_nucleic = sequences
@@ -3029,7 +3029,7 @@ fn parse_emboss_query(query: &str) -> (Option<u32>, &str) {
 
 fn emboss_temp_fasta(headers: &[String], sequences: &[String]) -> Result<PathBuf, TermalError> {
     let mut path = std::env::temp_dir();
-    let unique = format!("termal-emboss-{}.fa", std::process::id());
+    let unique = format!("msafara-emboss-{}.fa", std::process::id());
     path.push(unique);
     let file = fs::File::create(&path)?;
     let mut writer = BufWriter::new(file);
@@ -3245,7 +3245,7 @@ mod tests {
     }
 
     #[test]
-    fn test_termal_config_from_value() {
+    fn test_msafara_config_from_value() {
         let value = json!({
             "palette": ["#010203"],
             "current_search": [4, 5, 6],
@@ -3663,7 +3663,7 @@ mod tests {
         app.set_label_matches_from_tree(vec![0, 2], (0, 2));
 
         let mut path = PathBuf::from(std::env::temp_dir());
-        path.push("termal-test-session.trml");
+        path.push("msafara-test-session.msfr");
         let _ = std::fs::remove_file(&path);
         app.save_session(&path).unwrap();
 

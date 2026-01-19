@@ -13,13 +13,13 @@ set pwt $params(w)
 set timeout $params(t)
 
 
-spawn ../target/debug/termal --poll-wait-time $pwt -w 20 -t 10 ../data/test1.fas
+spawn ../target/debug/msafara --poll-wait-time $pwt -w 20 -t 10 ../data/test1.fas
 send "q"
 expect {
     eof { }
     default { exit 1 }
 }
-spawn ../target/debug/termal --poll-wait-time $pwt -w 20 -t 10 ../data/test1.fas
+spawn ../target/debug/msafara --poll-wait-time $pwt -w 20 -t 10 ../data/test1.fas
 send "Q"
 expect {
     eof { }

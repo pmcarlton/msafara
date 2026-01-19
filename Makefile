@@ -2,18 +2,18 @@
 
 VERSION=v1.0.0
 RUST_SOURCES = $(shell find src -name '*.rs')
-LINUX_BINARY = ./target/release/termal
-LINUX_STATIC_BINARY = target/x86_64-unknown-linux-musl/release/termal
-COMPRESSED_LINUX_STATIC_BINARY = termal-$(VERSION)-linux-x86_64.tar.gz
+LINUX_BINARY = ./target/release/msafara
+LINUX_STATIC_BINARY = target/x86_64-unknown-linux-musl/release/msafara
+COMPRESSED_LINUX_STATIC_BINARY = msafara-$(VERSION)-linux-x86_64.tar.gz
 COMPRESSED_LINUX_STATIC_BINARY_SHA256 = $(COMPRESSED_LINUX_STATIC_BINARY).sha256
-WINDOWS_BINARY = ./target/x86_64-pc-windows-gnu/release/termal.exe
+WINDOWS_BINARY = ./target/x86_64-pc-windows-gnu/release/msafara.exe
 INSTALL_DIR = /usr/local/bin
 MAN_DIR = /usr/share/man
 MS_DIR = ./manuscript
 BINARIES = $(LINUX_BINARY) $(LINUX_STATIC_BINARY) $(WINDOWS_BINARY) 
 COMPRESSED_BINARIES = $(COMPRESSED_LINUX_STATIC_BINARY) 
 
-all: $(BINARIES) $(COMPRESSED_BINARIES) termal.1.gz manuscript
+all: $(BINARIES) $(COMPRESSED_BINARIES) msafara.1.gz manuscript
 
 release: $(COMPRESSED_BINARIES) $(COMPRESSED_LINUX_STATIC_BINARY_SHA256)
 
@@ -33,10 +33,10 @@ $(LINUX_STATIC_BINARY): $(RUST_SOURCES)
 $(WINDOWS_BINARY): $(RUST_SOURCES)
 	cargo build --release --target x86_64-pc-windows-gnu
 
-termal.1.gz: termal.1
+msafara.1.gz: msafara.1
 	gzip -kf $<
 
-termal.1: termal.md
+msafara.1: msafara.md
 	pandoc --standalone --to=man $< > $@
 
 tags: $(RUST_SOURCES)
@@ -52,7 +52,7 @@ roadmap.pdf: roadmap.md meta.yaml
 
 install: 
 	install -m 755 $(LINUX_BINARY) $(INSTALL_DIR)
-	install -m 644 termal.1.gz $(MAN_DIR)/man1
+	install -m 644 msafara.1.gz $(MAN_DIR)/man1
 
 manuscript:
 	$(MAKE) -C $(MS_DIR)
@@ -62,7 +62,7 @@ test:
 	make -C app-tests/ test
 
 clean:
-	$(RM) termal.1
+	$(RM) msafara.1
 
 mrproper: clean
 	cargo clean

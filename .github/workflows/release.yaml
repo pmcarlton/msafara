@@ -30,7 +30,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-      BIN_NAME: termal
+      BIN_NAME: msafara
       VERSION: ${{ github.ref_name }} # e.g. v1.2.0
 
     steps:

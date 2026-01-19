@@ -6,9 +6,9 @@
 
 * Search mode with a line editor for sequence regex searches (`/`) and EMBOSS (fuzzpro/fuzznuc) fuzzy searches (`\`)
 * Search registry with multiple saved searches, enable/disable toggles, and a Search List panel (`:s`)
-* EMBOSS fuzzy search integration (fuzzpro/fuzznuc) with GFF parsing and `.termalconfig`
+* EMBOSS fuzzy search integration (fuzzpro/fuzznuc) with GFF parsing and `.msafara.config`
 * Optional leading mismatch count for EMBOSS patterns (e.g., `2 PATTERN` -> `-pmis 2`)
-* Configurable search colors via `.termalconfig` and mono-white as the default color mode
+* Configurable search colors via `.msafara.config` and mono-white as the default color mode
 * Header filtering: reject current header match to `rejected<file>` (`!`) and write view output (`W`)
 * Views with per-view ordering/tree/search state, plus `:vc` (create) and `:vs` (switch)
 * View deletion (`:vd`), moving selected sequences to another view (`:mv`), and per-view notes (`|`)
@@ -20,7 +20,7 @@
 * SVG export of the current view (`:es`)
 * MAFFT realignment with guide tree output and tree panel (`:ra`)
 * Separate header/sequence match navigation (`n/p` vs `[`/`]`) and numbered selection/rejection (`:sn`, `:rn`)
-* Session save/load with JSON .trml files (`:ss`, `:sl`)
+* Session save/load with JSON .msfr files (`:ss`, `:sl`)
 * Notes editor (`@`) stored inside session files
 * Tree navigation mode (`:tn`) with subtree selection and `:rs` reject for selected labels
 * Tree navigation Shift-Up/Down for half-screen scrolling without changing selection
@@ -37,7 +37,7 @@
 * SVG export renders highlighted sequence matches in bold text
 * Tree panel auto-hides for non-tree ordering modes and auto-shows for tree order
 * FASTA headers now use the ID token (first whitespace-delimited field)
-* Tools/colors configuration is unified in `.termalconfig` (searched in `$HOME`, then the current directory)
+* Tools/colors configuration is unified in `.msafara.config` (searched in `$HOME`, then the current directory)
 * MAFFT alignments now use `--maxiterate 1000 --localpair` by default
 * Opening unaligned FASTA now errors if MAFFT is not configured
 * Tree selection now renders with heavy box-drawing for the selected subtree

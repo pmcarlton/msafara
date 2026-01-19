@@ -658,7 +658,7 @@ fn handle_command(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
                     .collect();
                 files.sort();
                 if files.is_empty() {
-                    ui.app.warning_msg("No .trml files found");
+                    ui.app.warning_msg("No .msfr files found");
                 } else {
                     ui.input_mode = InputMode::SessionList { selected: 0, files };
                 }

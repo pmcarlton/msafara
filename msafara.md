@@ -1,15 +1,15 @@
-% Termal(1) Version 0.1 | TUI Multiple Sequence Alignment Viewer
+% Msafara(1) Version 0.1 | TUI Multiple Sequence Alignment Viewer
 % Thomas Junier
 
 NAME
 ====
 
-Termal - Multiple sequence alignment viewer with a text interface
+Msafara - Multiple sequence alignment viewer with a text interface
 
 SYNOPSIS
 ========
 
-`termal [options] <MSA file>`
+`msafara [options] <MSA file>`
 
 where `<MSA file>` is an alignment in multiple FastA, Clustal, or Stockholm format.
 
@@ -156,7 +156,7 @@ Extended commands (:)
 
 * :s<Ret>      : open Search List panel (a=add, c=current, d=delete, space=toggle, 1-9=select)
 * :es<Ret>     : export current view to SVG (prompts for path)
-* :ra<Ret>     : realign sequences with mafft and show tree panel (requires .termalconfig)
+* :ra<Ret>     : realign sequences with mafft and show tree panel (requires .msafara.config)
 * :tn<Ret>     : enter tree navigation mode (auto-realigns if needed)
 * :tt<Ret>     : toggle tree panel visibility
 * :rc<Ret>     : reject current match (y/n to confirm)
@@ -165,8 +165,8 @@ Extended commands (:)
 * :rs<Ret>     : reject selected sequences
 * :sn<Ret>     : select header by displayed number (e.g., :sn 31)
 * :rn<Ret>     : reject by displayed number(s) (e.g., :rn 1,4,6-8)
-* :ss<Ret>     : save session to .trml (prompted, with overwrite confirmation)
-* :sl<Ret>     : load session from .trml (choose from list)
+* :ss<Ret>     : save session to .msfr (prompted, with overwrite confirmation)
+* :sl<Ret>     : load session from .msfr (choose from list)
 * :vc<Ret>     : create a new view from the current view (prompts for name)
 * :vx<Ret>     : create a new view from selected sequences (prompts with view list)
 * :vs<Ret>     : switch to another view (choose from list)
@@ -213,7 +213,7 @@ OPTIONS
 
 : Show the help message and exit successfully
 
-You can also pass a `.trml` session file as the alignment argument to restore a saved session.
+You can also pass a `.msfr` session file as the alignment argument to restore a saved session.
 
 
 `-i, --info`

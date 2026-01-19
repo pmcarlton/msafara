@@ -11,7 +11,7 @@ use ratatui::{
     TerminalOptions, Viewport,
 };
 
-use termal_msa::{
+use msafara_msa::{
     alignment::Alignment,
     app::App,
     seq::fasta,

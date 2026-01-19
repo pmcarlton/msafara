@@ -147,15 +147,15 @@ fn read_user_ordering(fname: &str) -> Result<Vec<String>, std::io::Error> {
     reader.lines().collect()
 }
 
-fn find_termal_config() -> Option<PathBuf> {
+fn find_msafara_config() -> Option<PathBuf> {
     if let Ok(home) = std::env::var("HOME") {
-        let path = PathBuf::from(home).join(".termalconfig");
+        let path = PathBuf::from(home).join(".msafara.config");
         if path.exists() {
             return Some(path);
         }
     }
     if let Ok(cwd) = std::env::current_dir() {
-        let path = cwd.join(".termalconfig");
+        let path = cwd.join(".msafara.config");
         if path.exists() {
             return Some(path);
         }
@@ -187,11 +187,11 @@ fn align_fasta_with_mafft(
 ) -> Result<AutoAlignResult, TermalError> {
     let mafft_bin_dir = mafft_bin_dir.ok_or_else(|| {
         TermalError::Format(String::from(
-            "Unaligned FASTA requires mafft. Install mafft and set mafft_bin_dir in .termalconfig.",
+            "Unaligned FASTA requires mafft. Install mafft and set mafft_bin_dir in .msafara.config.",
         ))
     })?;
     let mut input_tmp = std::env::temp_dir();
-    let unique_in = format!("termal-mafft-auto-{}.in.fa", std::process::id());
+    let unique_in = format!("msafara-mafft-auto-{}.in.fa", std::process::id());
     input_tmp.push(unique_in);
     {
         let file = std::fs::File::create(&input_tmp)?;
@@ -203,7 +203,7 @@ fn align_fasta_with_mafft(
     }
 
     let mut output_path = std::env::temp_dir();
-    let unique_out = format!("termal-mafft-auto-{}.out.fa", std::process::id());
+    let unique_out = format!("msafara-mafft-auto-{}.out.fa", std::process::id());
     output_path.push(unique_out);
 
     println!("Unaligned FASTA detected; running mafft --maxiterate 1000 --localpair...");
@@ -287,7 +287,7 @@ pub fn run() -> Result<(), TermalError> {
     if let Some(seq_filename) = &cli.aln_fname {
         let mut config_err: Option<String> = None;
         let mut config: Option<TermalConfig> = None;
-        if let Some(path) = find_termal_config() {
+        if let Some(path) = find_msafara_config() {
             match TermalConfig::from_file(&path) {
                 Ok(cfg) => config = Some(cfg),
                 Err(e) => {
@@ -298,7 +298,7 @@ pub fn run() -> Result<(), TermalError> {
         let mut auto_tree: Option<(TreeNode, String, Vec<String>, u16)> = None;
         let mut auto_tree_err: Option<String> = None;
         let mut app = if Path::new(seq_filename).extension().and_then(|s| s.to_str())
-            == Some("trml")
+            == Some("msfr")
         {
             App::from_session_file(Path::new(seq_filename))?
         } else {

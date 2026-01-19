@@ -79,7 +79,7 @@ cargo build --release --lock
 Smoke test with the example alignment:
 
 ```bash
-./target/release/termal data/example-1.msa --help
+./target/release/msafara data/example-1.msa --help
 ```
 
 ---
@@ -93,7 +93,7 @@ Smoke test with the example alignment:
 git add -A
 git commit -m "release: vX.Y.Z"
 # Create an annotated (or signed) tag
-git tag -a vX.Y.Z -m "termal vX.Y.Z"
+git tag -a vX.Y.Z -m "msafara vX.Y.Z"
 # Merge the release branch if you use one
 git checkout master && git merge --no-ff release/vX.Y.Z
 # Push branch and tag
@@ -128,7 +128,7 @@ If OK, publish:
 cargo publish
 ```
 
-**Post-publish**: confirm on crates.io that `termal X.Y.Z` appears.
+**Post-publish**: confirm on crates.io that `msafara X.Y.Z` appears.
 
 ---
 
@@ -140,7 +140,7 @@ cargo publish
   * **Release workflow**: builds artifacts for Linux/macOS/Windows, uploads to the GitHub Release.
 * When the workflow finishes, create (or finalize) the **GitHub Release**:
 
-  * Title: `termal vX.Y.Z`.
+  * Title: `msafara vX.Y.Z`.
   * Release notes: paste from CHANGELOG `X.Y.Z`.
   * Ensure assets are attached (see §8) and SHAs are provided.
 
@@ -154,7 +154,7 @@ Provide **compressed archives** that include:
 
 **Common contents (inside each archive):**
 
-* `termal` binary (or `termal.exe` on Windows)
+* `msafara` binary (or `msafara.exe` on Windows)
 * `README.md`, `LICENSE`, `CHANGELOG.md`
 * `data/example-1.msa` (for quick testing)
 * (Optional) `completions/` for bash/zsh/fish
@@ -171,8 +171,8 @@ Provide **compressed archives** that include:
 **File naming scheme:**
 
 ```
-termal-vX.Y.Z-<target>.tar.gz    # unix
-termal-vX.Y.Z-<target>.zip       # windows
+msafara-vX.Y.Z-<target>.tar.gz    # unix
+msafara-vX.Y.Z-<target>.zip       # windows
 ```
 
 **Checksums:**
@@ -206,7 +206,7 @@ termal-vX.Y.Z-<target>.zip       # windows
 
 ## 11) Post-release verification
 
-* [ ] `cargo install termal` installs `X.Y.Z` on a clean machine/container.
+* [ ] `cargo install msafara-msa` installs `X.Y.Z` on a clean machine/container.
 * [ ] Each downloadable binary runs `--version` and opens `data/example-1.msa`.
 * [ ] GitHub Release has all assets + checksums; CI badges green.
 * [ ] crates.io page shows correct README and categories.
@@ -230,7 +230,7 @@ sign-tag = false
 consolidate-commits = true
 push = true
 publish = false          # let CI publish, or set true if you publish locally
-tag-message = "termal {{version}}"
+tag-message = "msafara {{version}}"
 pre-release-replacements = [
   { file = "CHANGELOG.md", search = "## \[Unreleased\]", replace = "## [Unreleased]\n\n## [{{version}}] - {{date}}" },
 ]
@@ -268,7 +268,7 @@ cargo package --list | less
 # Tag & push
 git checkout -b release/vX.Y.Z
 git commit -am "release: vX.Y.Z"
-git tag -a vX.Y.Z -m "termal vX.Y.Z"
+git tag -a vX.Y.Z -m "msafara vX.Y.Z"
 git checkout master && git merge --no-ff release/vX.Y.Z
 git push origin master
 git push origin vX.Y.Z
@@ -299,6 +299,6 @@ cargo publish
 * [ ] crates.io shows `X.Y.Z`
 * [ ] docs.rs built
 * [ ] Zenodo archived & DOI visible
-* [ ] `cargo install termal` works
+* [ ] `cargo install msafara-msa` works
 
 ---

@@ -2,14 +2,14 @@ RELEASE_VERSION = v1.0.0
 EXAMPLE_MSA = data/example-1.msa
 
 # Binaries built manually or by other rules
-LINUX_BIN = target/x86_64-unknown-linux-musl/release/termal
-MACOS_BIN = termal-v1.0.0-macos-x86_64
-WINDOWS_BIN = termal-v1.0.0-windows-x86_64.exe
+LINUX_BIN = target/x86_64-unknown-linux-musl/release/msafara
+MACOS_BIN = msafara-v1.0.0-macos-x86_64
+WINDOWS_BIN = msafara-v1.0.0-windows-x86_64.exe
 
 # Archive names
-LINUX_ARCHIVE = termal-$(RELEASE_VERSION)-linux-x86_64.tar.gz
-MACOS_ARCHIVE = termal-$(RELEASE_VERSION)-macos-x86_64.tar.gz
-WINDOWS_ARCHIVE = termal-$(RELEASE_VERSION)-windows-x86_64.zip
+LINUX_ARCHIVE = msafara-$(RELEASE_VERSION)-linux-x86_64.tar.gz
+MACOS_ARCHIVE = msafara-$(RELEASE_VERSION)-macos-x86_64.tar.gz
+WINDOWS_ARCHIVE = msafara-$(RELEASE_VERSION)-windows-x86_64.zip
 
 LINUX_SHA = $(LINUX_ARCHIVE).sha256
 MACOS_SHA = $(MACOS_ARCHIVE).sha256
@@ -21,30 +21,30 @@ release-archives: $(LINUX_ARCHIVE) $(LINUX_SHA) \
                   $(WINDOWS_ARCHIVE) $(WINDOWS_SHA)
 
 $(LINUX_ARCHIVE): $(LINUX_BIN) $(EXAMPLE_MSA)
-	cp $(LINUX_BIN) termal
-	chmod 755 termal
-	tar -czhf $@ termal $(EXAMPLE_MSA)
-	rm termal
+	cp $(LINUX_BIN) msafara
+	chmod 755 msafara
+	tar -czhf $@ msafara $(EXAMPLE_MSA)
+	rm msafara
 
 $(LINUX_SHA): $(LINUX_ARCHIVE)
 	sha256sum $< > $@
 
 $(MACOS_ARCHIVE): $(MACOS_BIN) $(EXAMPLE_MSA)
-	cp $(MACOS_BIN) termal
-	chmod 755 termal
-	tar -czhf $@ termal $(EXAMPLE_MSA)
-	rm termal
+	cp $(MACOS_BIN) msafara
+	chmod 755 msafara
+	tar -czhf $@ msafara $(EXAMPLE_MSA)
+	rm msafara
 
 $(MACOS_SHA): $(MACOS_ARCHIVE)
 	sha256sum $< > $@
 
 $(WINDOWS_ARCHIVE): $(WINDOWS_BIN) $(EXAMPLE_MSA)
-	cp $(WINDOWS_BIN) termal.exe
+	cp $(WINDOWS_BIN) msafara.exe
 	# Optional: convert line endings for Windows if needed
 	# unix2dos -n $(EXAMPLE_MSA) example.msa
 	cp $(EXAMPLE_MSA) example-1.msa
-	zip $@ termal.exe example-1.msa
-	rm termal.exe example-1.msa
+	zip $@ msafara.exe example-1.msa
+	rm msafara.exe example-1.msa
 
 $(WINDOWS_SHA): $(WINDOWS_ARCHIVE)
 	sha256sum $< > $@

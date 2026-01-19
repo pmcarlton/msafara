@@ -1,6 +1,6 @@
 # Main Key Bindings
 
-Run `termal -b` to see this message if it doesn't fit on screen (binary rename pending).
+Run `msafara -b` to see this message if it doesn't fit on screen.
 
 Arguments (counts, search patterns), match index, and ordering mode are shown in the modeline.
 
@@ -43,7 +43,7 @@ P            : save current search and clear its highlights
 
 :s<Ret>      : open Search List panel (a=add, c=current, d=delete, space=toggle, 1-9=select)
 :es<Ret>     : export current view to SVG (prompts for path)
-:ra<Ret>     : realign sequences with mafft and show tree panel (requires .termalconfig)
+:ra<Ret>     : realign sequences with mafft and show tree panel (requires .msafara.config)
 :tn<Ret>     : enter tree navigation mode (auto-realigns if needed)
 :tt<Ret>     : toggle tree panel visibility
 :rc<Ret>     : reject current match (y/n to confirm)
@@ -53,8 +53,8 @@ P            : save current search and clear its highlights
 :sn<Ret>     : select headers by number/range (e.g., :sn 31 or :sn 1,4,6-8)
 :sm<Ret>     : select sequences containing the current sequence match
 :rn<Ret>     : reject by displayed number(s) (e.g., :rn 1,4,6-8)
-:ss<Ret>     : save session to .trml (prompted, with overwrite confirmation)
-:sl<Ret>     : load session from .trml (choose from list)
+:ss<Ret>     : save session to .msfr (prompted, with overwrite confirmation)
+:sl<Ret>     : load session from .msfr (choose from list)
 :vc<Ret>     : create a new view from the current view (prompts for name)
 :vx<Ret>     : create a new view from selected sequences (prompts with view list)
 :vs<Ret>     : switch to another view (choose from list)
