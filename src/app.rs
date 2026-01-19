@@ -132,6 +132,7 @@ struct SeqRecord {
 struct ViewState {
     name: String,
     sequence_ids: Vec<usize>,
+    alignment_override: Option<Vec<String>>,
     tree: Option<TreeNode>,
     tree_newick: Option<String>,
     tree_lines: Vec<String>,
@@ -341,6 +342,7 @@ pub struct App {
     view_order: Vec<String>,
     current_view: String,
     current_view_ids: Vec<usize>,
+    current_view_alignment_override: Option<Vec<String>>,
     ordering_criterion: SeqOrdering,
     metric: Metric,
     // Specifies in which order the aligned sequences should be displayed. The elements of this Vec
@@ -384,6 +386,22 @@ impl App {
             }
         }
         Alignment::from_vecs(headers, sequences)
+    }
+
+    fn build_alignment_for_ids_with_sequences(
+        &self,
+        ids: &[usize],
+        sequences: &[String],
+    ) -> Alignment {
+        let mut headers = Vec::with_capacity(ids.len());
+        let mut seqs = Vec::with_capacity(ids.len());
+        for (id, sequence) in ids.iter().zip(sequences.iter()) {
+            if let Some(record) = self.records.get(*id) {
+                headers.push(record.header.clone());
+                seqs.push(sequence.clone());
+            }
+        }
+        Alignment::from_vecs(headers, seqs)
     }
 
     fn update_records_from_alignment(
@@ -437,6 +455,7 @@ impl App {
         ViewState {
             name: self.current_view.clone(),
             sequence_ids: self.current_view_ids.clone(),
+            alignment_override: self.current_view_alignment_override.clone(),
             tree: self.tree.clone(),
             tree_newick: self.tree_newick.clone(),
             tree_lines: self.tree_lines.clone(),
@@ -460,7 +479,19 @@ impl App {
     fn load_view_state(&mut self, view: ViewState) -> Result<(), TermalError> {
         self.current_view = view.name.clone();
         self.current_view_ids = view.sequence_ids.clone();
-        self.alignment = self.build_alignment_for_ids(&self.current_view_ids);
+        if let Some(seqs) = view.alignment_override.clone() {
+            if seqs.len() == self.current_view_ids.len() {
+                self.alignment =
+                    self.build_alignment_for_ids_with_sequences(&self.current_view_ids, &seqs);
+                self.current_view_alignment_override = Some(seqs);
+            } else {
+                self.alignment = self.build_alignment_for_ids(&self.current_view_ids);
+                self.current_view_alignment_override = None;
+            }
+        } else {
+            self.alignment = self.build_alignment_for_ids(&self.current_view_ids);
+            self.current_view_alignment_override = None;
+        }
         let len = self.alignment.num_seq();
         self.ordering = (0..len).collect();
         self.reverse_ordering = (0..len).collect();
@@ -551,6 +582,10 @@ impl App {
         view.tree_panel_width = 0;
     }
 
+    fn clear_alignment_override_for_view(view: &mut ViewState) {
+        view.alignment_override = None;
+    }
+
     fn clear_current_view_tree(&mut self) {
         self.tree = None;
         self.tree_newick = None;
@@ -559,6 +594,13 @@ impl App {
         self.tree_selection_range = None;
         if let Some(view) = self.views.get_mut(&self.current_view) {
             Self::clear_tree_state_for_view(view);
+        }
+    }
+
+    fn update_current_view_alignment_override(&mut self, sequences: Option<Vec<String>>) {
+        self.current_view_alignment_override = sequences.clone();
+        if let Some(view) = self.views.get_mut(&self.current_view) {
+            view.alignment_override = sequences;
         }
     }
 
@@ -673,6 +715,7 @@ impl App {
         let view = ViewState {
             name: name.to_string(),
             sequence_ids: self.current_view_ids.clone(),
+            alignment_override: self.current_view_alignment_override.clone(),
             tree: self.tree.clone(),
             tree_newick: self.tree_newick.clone(),
             tree_lines: self.tree_lines.clone(),
@@ -736,6 +779,7 @@ impl App {
         let view = ViewState {
             name: name.to_string(),
             sequence_ids: sequence_ids.clone(),
+            alignment_override: None,
             tree: None,
             tree_newick: None,
             tree_lines: Vec::new(),
@@ -775,6 +819,7 @@ impl App {
             let view = ViewState {
                 name: String::from("filtered"),
                 sequence_ids: (0..self.records.len()).collect(),
+                alignment_override: None,
                 tree: None,
                 tree_newick: None,
                 tree_lines: Vec::new(),
@@ -795,6 +840,7 @@ impl App {
             let view = ViewState {
                 name: String::from("rejected"),
                 sequence_ids: Vec::new(),
+                alignment_override: None,
                 tree: None,
                 tree_newick: None,
                 tree_lines: Vec::new(),
@@ -824,6 +870,7 @@ impl App {
             if filtered.sequence_ids != next_ids {
                 filtered.sequence_ids = next_ids;
                 Self::clear_tree_state_for_view(filtered);
+                Self::clear_alignment_override_for_view(filtered);
             }
         }
         if let Some(rejected) = self.views.get_mut("rejected") {
@@ -835,6 +882,7 @@ impl App {
             if rejected.sequence_ids != next_ids {
                 rejected.sequence_ids = next_ids;
                 Self::clear_tree_state_for_view(rejected);
+                Self::clear_alignment_override_for_view(rejected);
             }
         }
     }
@@ -906,6 +954,7 @@ impl App {
             let is_current = name == self.current_view;
             if clear_tree && !is_current {
                 Self::clear_tree_state_for_view(view);
+                Self::clear_alignment_override_for_view(view);
             }
             (added, updated_ids, clear_tree, is_current)
         };
@@ -920,6 +969,7 @@ impl App {
             self.prune_selection_and_cursor();
             if clear_tree {
                 self.clear_current_view_tree();
+                self.update_current_view_alignment_override(None);
             }
         }
         Ok(added)
@@ -960,6 +1010,7 @@ impl App {
         let original_view = ViewState {
             name: String::from("original"),
             sequence_ids: (0..len).collect(),
+            alignment_override: None,
             tree: None,
             tree_newick: None,
             tree_lines: Vec::new(),
@@ -983,6 +1034,7 @@ impl App {
             view_order: vec![String::from("original")],
             current_view: String::from("original"),
             current_view_ids: (0..len).collect(),
+            current_view_alignment_override: None,
             ordering_criterion: SourceFile,
             metric: PctIdWrtConsensus,
             ordering: (0..len).collect(),
@@ -1173,6 +1225,7 @@ impl App {
                 let view_state = ViewState {
                     name: view.name.clone(),
                     sequence_ids: view.sequence_ids,
+                    alignment_override: None,
                     tree,
                     tree_newick: view.tree_newick,
                     tree_lines,
@@ -1208,6 +1261,7 @@ impl App {
             let view = ViewState {
                 name: String::from("original"),
                 sequence_ids: original_ids.clone(),
+                alignment_override: None,
                 tree,
                 tree_newick: session.tree_newick,
                 tree_lines,
@@ -1230,6 +1284,7 @@ impl App {
         if !self.views.contains_key(&self.current_view) {
             self.current_view = String::from("original");
         }
+        self.current_view_alignment_override = None;
         self.rejected_ids = self
             .views
             .get("rejected")
@@ -1968,6 +2023,9 @@ impl App {
                 self.cursor_id = None;
             }
         }
+        if self.current_view_alignment_override.is_some() {
+            self.update_current_view_alignment_override(Some(self.alignment.sequences.clone()));
+        }
         removed
     }
 
@@ -2350,8 +2408,37 @@ impl App {
         let seq_file = read_fasta_file(&output_path)?;
         let mafft_alignment = Alignment::from_file(seq_file);
         let view_ids = self.current_view_ids.clone();
-        self.update_records_from_alignment(&mafft_alignment, &view_ids)?;
-        self.alignment = self.build_alignment_for_ids(&view_ids);
+        if matches!(self.current_view_kind(), ViewKind::Original) {
+            self.update_records_from_alignment(&mafft_alignment, &view_ids)?;
+            self.alignment = self.build_alignment_for_ids(&view_ids);
+            self.update_current_view_alignment_override(None);
+        } else {
+            let mut seq_map: HashMap<&String, &String> = HashMap::new();
+            for (header, sequence) in mafft_alignment
+                .headers
+                .iter()
+                .zip(mafft_alignment.sequences.iter())
+            {
+                seq_map.insert(header, sequence);
+            }
+            let mut override_sequences = Vec::with_capacity(view_ids.len());
+            for id in &view_ids {
+                let record = self
+                    .records
+                    .get(*id)
+                    .ok_or_else(|| TermalError::Format(format!("Unknown sequence id {}", id)))?;
+                let seq = seq_map.get(&record.header).ok_or_else(|| {
+                    TermalError::Format(format!(
+                        "Realigned sequence missing header {}",
+                        record.header
+                    ))
+                })?;
+                override_sequences.push((*seq).clone());
+            }
+            self.alignment =
+                self.build_alignment_for_ids_with_sequences(&view_ids, &override_sequences);
+            self.update_current_view_alignment_override(Some(override_sequences));
+        }
         self.search_state = None;
         self.seq_search_state = None;
         self.label_search_source = None;
@@ -3243,6 +3330,21 @@ mod tests {
         app.set_tree_ordering_from_tree().unwrap();
         assert_eq!(app.get_seq_ordering(), SeqOrdering::User);
         assert_eq!(app.ordering, vec![1, 0]);
+    }
+
+    #[test]
+    fn test_view_alignment_override_applied() {
+        let hdrs = vec![String::from("R1"), String::from("R2")];
+        let seqs = vec![String::from("AA"), String::from("BB")];
+        let aln = Alignment::from_vecs(hdrs, seqs);
+        let mut app = App::new("TEST", aln, None);
+        app.select_label_by_rank(1).unwrap();
+        app.create_view_from_selection("picked").unwrap();
+        if let Some(view) = app.views.get_mut("picked") {
+            view.alignment_override = Some(vec![String::from("XX")]);
+        }
+        app.switch_view("picked").unwrap();
+        assert_eq!(app.alignment.sequences, vec![String::from("XX")]);
     }
 
     #[test]
