@@ -513,6 +513,7 @@ fn handle_command(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
                         }
                     }
                 }
+                ui.show_tree_panel(true);
                 match ui.app.tree() {
                     Some(tree) => match super::build_tree_nav(ui.app, tree) {
                         Ok(nav) => {
