@@ -2266,7 +2266,7 @@ impl App {
             .arg("--reorder")
             .arg(&input_path)
             .stdout(Stdio::from(output_file))
-            .stderr(Stdio::inherit())
+            .stderr(Stdio::null())
             .status()
             .map_err(|e| TermalError::Format(format!("Failed to run mafft: {}", e)))?;
         if !status.success() {
