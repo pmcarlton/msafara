@@ -446,6 +446,10 @@ impl<'a> UI<'a> {
     }
 
     pub fn sync_tree_panel_with_ordering(&mut self) {
+        if matches!(self.input_mode, InputMode::TreeNav { .. }) {
+            self.show_tree_panel = true;
+            return;
+        }
         if !self.app.has_tree_panel() {
             self.show_tree_panel = false;
             return;
