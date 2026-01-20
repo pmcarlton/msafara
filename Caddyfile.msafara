@@ -1,0 +1,6 @@
+# msafara site block (adjust host as needed)
+msafara.example.com {
+    root * /var/www/msafara
+    file_server
+    encode zstd gzip
+}
