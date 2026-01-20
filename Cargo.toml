@@ -6,7 +6,7 @@ license = "MIT"
 repository = "https://github.com/pmcarlton/msafara"
 readme = "README.crates.md"
 description = "View, edit, and explore multiple sequence alignments in your terminal"
-keywords = ["multiple sequence alignment", "msa", "bioinformatics", "viewer", "terminal", "TUI"]
+keywords = ["multiple sequence alignment", "msa", "bioinformatics", "terminal", "TUI"]
 categories = ["science::bioinformatics", "science::bioinformatics::sequence-analysis", "command-line-utilities"]
 include = ["**/*.rs", "src/ui/bindings.md", "Cargo.toml", "README.crates.md", "data/example-1.msa", "data/CD00377_ICL-PEPM_wDesc.msa", "data/PF00244.26.sto", "data/OX_OFA-pg2.msa", "data/OX_OFA-pg2.order"]
 #homepage: no page other than repo
