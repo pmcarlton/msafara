@@ -153,8 +153,10 @@ pub fn handle_key_press(ui: &mut UI, key_event: KeyEvent) -> bool {
         LabelSearch { pattern } => handle_label_search(ui, key_event, &pattern),
         Search { editor, kind } => handle_search(ui, key_event, editor, kind),
         Command { editor } => handle_command(ui, key_event, editor),
-        ExportSvg { editor } => handle_export_svg(ui, key_event, editor),
-        ConfirmOverwrite { editor, path } => handle_confirm_overwrite(ui, key_event, editor, path),
+        ExportSvg { editor, full } => handle_export_svg(ui, key_event, editor, full),
+        ConfirmOverwrite { editor, path, full } => {
+            handle_confirm_overwrite(ui, key_event, editor, path, full)
+        }
         SessionSave { editor } => handle_session_save(ui, key_event, editor),
         ConfirmSessionOverwrite { editor, path } => {
             handle_confirm_session_overwrite(ui, key_event, editor, path)
@@ -467,7 +469,18 @@ fn handle_command(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
                 for c in default_path.chars() {
                     editor.insert_char(c);
                 }
-                ui.input_mode = InputMode::ExportSvg { editor };
+                ui.input_mode = InputMode::ExportSvg {
+                    editor,
+                    full: false,
+                };
+                ui.app.argument_msg(String::new(), ui.export_svg_text());
+            } else if cmd.trim() == "eS" {
+                let default_path = format!("{}.svg", ui.app.filename);
+                let mut editor = LineEditor::new();
+                for c in default_path.chars() {
+                    editor.insert_char(c);
+                }
+                ui.input_mode = InputMode::ExportSvg { editor, full: true };
                 ui.app.argument_msg(String::new(), ui.export_svg_text());
             } else if cmd.trim() == "ra" {
                 ui.app.info_msg("Running mafft...");
@@ -1167,7 +1180,7 @@ fn handle_view_create_with_list(ui: &mut UI, key_event: KeyEvent, mut editor: Li
     }
 }
 
-fn handle_export_svg(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
+fn handle_export_svg(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor, full: bool) {
     match key_event.code {
         KeyCode::Esc => {
             ui.input_mode = InputMode::Normal;
@@ -1177,17 +1190,22 @@ fn handle_export_svg(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
         KeyCode::Enter => {
             let path = editor.text();
             if path.trim().is_empty() {
-                ui.input_mode = InputMode::ExportSvg { editor };
+                ui.input_mode = InputMode::ExportSvg { editor, full };
                 ui.app.warning_msg("Export path cannot be empty");
                 mark_dirty(ui);
                 return;
             }
             if std::path::Path::new(&path).exists() {
-                ui.input_mode = InputMode::ConfirmOverwrite { editor, path };
+                ui.input_mode = InputMode::ConfirmOverwrite { editor, path, full };
                 ui.app.info_msg("Overwrite SVG? (y/n)");
             } else {
                 ui.app.argument_msg(String::new(), path.clone());
-                match ui.export_svg(std::path::Path::new(&path)) {
+                let result = if full {
+                    ui.export_svg_full(std::path::Path::new(&path))
+                } else {
+                    ui.export_svg(std::path::Path::new(&path))
+                };
+                match result {
                     Ok(_) => {}
                     Err(e) => ui.app.error_msg(format!("Export failed: {}", e)),
                 }
@@ -1197,34 +1215,34 @@ fn handle_export_svg(ui: &mut UI, key_event: KeyEvent, mut editor: LineEditor) {
         }
         KeyCode::Char(c) if c.is_ascii_graphic() || c == ' ' => {
             editor.insert_char(c);
-            ui.input_mode = InputMode::ExportSvg { editor };
+            ui.input_mode = InputMode::ExportSvg { editor, full };
             ui.app.argument_msg(String::new(), ui.export_svg_text());
             mark_dirty(ui);
         }
         KeyCode::Backspace => {
             editor.backspace();
-            ui.input_mode = InputMode::ExportSvg { editor };
+            ui.input_mode = InputMode::ExportSvg { editor, full };
             ui.app.argument_msg(String::new(), ui.export_svg_text());
             mark_dirty(ui);
         }
         KeyCode::Left => {
             editor.move_left();
-            ui.input_mode = InputMode::ExportSvg { editor };
+            ui.input_mode = InputMode::ExportSvg { editor, full };
             mark_dirty(ui);
         }
         KeyCode::Right => {
             editor.move_right();
-            ui.input_mode = InputMode::ExportSvg { editor };
+            ui.input_mode = InputMode::ExportSvg { editor, full };
             mark_dirty(ui);
         }
         KeyCode::Home => {
             editor.move_home();
-            ui.input_mode = InputMode::ExportSvg { editor };
+            ui.input_mode = InputMode::ExportSvg { editor, full };
             mark_dirty(ui);
         }
         KeyCode::End => {
             editor.move_end();
-            ui.input_mode = InputMode::ExportSvg { editor };
+            ui.input_mode = InputMode::ExportSvg { editor, full };
             mark_dirty(ui);
         }
         _ => {}
@@ -1361,11 +1379,22 @@ fn handle_session_list(ui: &mut UI, key_event: KeyEvent, mut selected: usize, fi
     }
 }
 
-fn handle_confirm_overwrite(ui: &mut UI, key_event: KeyEvent, editor: LineEditor, path: String) {
+fn handle_confirm_overwrite(
+    ui: &mut UI,
+    key_event: KeyEvent,
+    editor: LineEditor,
+    path: String,
+    full: bool,
+) {
     match key_event.code {
         KeyCode::Char('y') | KeyCode::Char('Y') => {
             ui.app.argument_msg(String::new(), path.clone());
-            match ui.export_svg(std::path::Path::new(&path)) {
+            let result = if full {
+                ui.export_svg_full(std::path::Path::new(&path))
+            } else {
+                ui.export_svg(std::path::Path::new(&path))
+            };
+            match result {
                 Ok(_) => {}
                 Err(e) => ui.app.error_msg(format!("Export failed: {}", e)),
             }
@@ -1373,7 +1402,7 @@ fn handle_confirm_overwrite(ui: &mut UI, key_event: KeyEvent, editor: LineEditor
             mark_dirty(ui);
         }
         _ => {
-            ui.input_mode = InputMode::ExportSvg { editor };
+            ui.input_mode = InputMode::ExportSvg { editor, full };
             ui.app.argument_msg(String::new(), ui.export_svg_text());
             mark_dirty(ui);
         }

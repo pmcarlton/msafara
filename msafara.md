@@ -156,6 +156,7 @@ Extended commands (:)
 
 * :s<Ret>      : open Search List panel (a=add, c=current, d=delete, space=toggle, 1-9=select)
 * :es<Ret>     : export current view to SVG (prompts for path)
+* :eS<Ret>     : export full view (all sequences/columns) to SVG
 * :ra<Ret>     : realign sequences with mafft and show tree panel (requires .msafara.config)
 * :tn<Ret>     : enter tree navigation mode (auto-realigns if needed)
 * :tt<Ret>     : toggle tree panel visibility

@@ -90,10 +90,12 @@ enum InputMode {
     },
     ExportSvg {
         editor: LineEditor,
+        full: bool,
     },
     ConfirmOverwrite {
         editor: LineEditor,
         path: String,
+        full: bool,
     },
     SessionSave {
         editor: LineEditor,
@@ -500,6 +502,10 @@ impl<'a> UI<'a> {
         svg::export_current_view(self, path)
     }
 
+    pub fn export_svg_full(&mut self, path: &Path) -> Result<(), TermalError> {
+        svg::export_full_view(self, path)
+    }
+
     pub fn frame_size(&self) -> Option<Size> {
         self.frame_size
     }
@@ -885,7 +891,7 @@ impl<'a> UI<'a> {
 
     pub fn export_svg_text(&self) -> String {
         match &self.input_mode {
-            InputMode::ExportSvg { editor } => editor.text(),
+            InputMode::ExportSvg { editor, .. } => editor.text(),
             InputMode::ConfirmOverwrite { editor, .. } => editor.text(),
             _ => String::new(),
         }

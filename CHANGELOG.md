@@ -18,6 +18,7 @@
 * Clustal alignment input format (`-f clustal`)
 * Wishlist document for future enhancements
 * SVG export of the current view (`:es`)
+* Full SVG export of the entire view (`:eS`)
 * MAFFT realignment with guide tree output and tree panel (`:ra`)
 * Separate header/sequence match navigation (`n/p` vs `[`/`]`) and numbered selection/rejection (`:sn`, `:rn`)
 * Session save/load with JSON .msfr files (`:ss`, `:sl`)
@@ -38,6 +39,7 @@
 * Tree panel auto-hides for non-tree ordering modes and auto-shows for tree order
 * FASTA headers now use the ID token (first whitespace-delimited field)
 * Tools/colors configuration is unified in `.msafara.config` (searched in `$HOME`, then the current directory)
+* UI colors now fall back to ANSI 256-color when truecolor is unavailable
 * MAFFT alignments now use `--maxiterate 1000 --localpair` by default
 * Opening unaligned FASTA now errors if MAFFT is not configured
 * Tree selection now renders with heavy box-drawing for the selected subtree

@@ -37,6 +37,32 @@ pub fn export_current_view(ui: &mut UI, path: &Path) -> Result<(), TermalError> 
     Ok(())
 }
 
+pub fn export_full_view(ui: &mut UI, path: &Path) -> Result<(), TermalError> {
+    let size = full_frame_size(ui)?;
+    let backend = TestBackend::new(size.width, size.height);
+    let viewport = Viewport::Fixed(Rect::new(0, 0, size.width, size.height));
+    let mut terminal = Terminal::with_options(backend, TerminalOptions { viewport })
+        .map_err(|e| TermalError::Format(format!("SVG backend error: {}", e)))?;
+    let saved_top = ui.top_line;
+    let saved_left = ui.leftmost_col;
+    let saved_frame = ui.frame_size;
+    let saved_aln = ui.aln_pane_size;
+    ui.top_line = 0;
+    ui.leftmost_col = 0;
+    terminal
+        .draw(|f| render_ui(f, ui))
+        .map_err(|e| TermalError::Format(format!("SVG render error: {}", e)))?;
+    let buffer = terminal.backend().buffer().clone();
+    let seq_rect = sequence_pane_rect(ui, Rect::new(0, 0, size.width, size.height));
+    let svg = buffer_to_svg(&buffer, seq_rect);
+    fs::write(path, svg)?;
+    ui.top_line = saved_top;
+    ui.leftmost_col = saved_left;
+    ui.frame_size = saved_frame;
+    ui.aln_pane_size = saved_aln;
+    Ok(())
+}
+
 fn buffer_to_svg(buf: &Buffer, seq_rect: Rect) -> String {
     let area = buf.area;
     let width_px = area.width.saturating_mul(CELL_WIDTH) as u32;
@@ -173,6 +199,29 @@ fn sequence_pane_rect(ui: &UI, area: Rect) -> Rect {
     )
     .split(v_panes[0]);
     upper_panes[1]
+}
+
+fn full_frame_size(ui: &UI) -> Result<ratatui::layout::Size, TermalError> {
+    let seq_rows = ui.app.num_seq() as u32 + 2;
+    let seq_cols = ui.app.aln_len() as u32 + 2;
+    let seq_pane_height = seq_rows.min(u16::MAX as u32) as u16;
+    let seq_pane_width = seq_cols.min(u16::MAX as u32) as u16;
+    let tree_width = if ui.is_tree_panel_visible() {
+        ui.app.tree_panel_width().max(3)
+    } else {
+        0
+    };
+    let left_total = ui.left_pane_width.saturating_add(tree_width);
+    let width = left_total.saturating_add(seq_pane_width);
+    let height = match ui.bottom_pane_position {
+        BottomPanePosition::Adjacent | BottomPanePosition::ScreenBottom => {
+            seq_pane_height.saturating_add(ui.bottom_pane_height)
+        }
+    };
+    if width == 0 || height == 0 {
+        return Err(TermalError::Format(String::from("Invalid SVG export size")));
+    }
+    Ok(ratatui::layout::Size { width, height })
 }
 
 #[cfg(test)]

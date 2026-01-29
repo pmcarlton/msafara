@@ -83,7 +83,9 @@ track notes that are specific to the current view.
 ## Export
 
 SVG export (`:es`) writes an SVG capture of the visible viewport, using the
-current color/selection state. Output filenames can be edited before writing.
+current color/selection state. Use `:eS` to export the full extent (all
+sequences/columns) in the current view. Output filenames can be edited before
+writing.
 
 ## Session Save/Load
 
